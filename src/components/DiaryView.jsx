@@ -50,21 +50,31 @@ export default function DiaryView({ appData, setAppData }) {
         background: 'linear-gradient(to bottom, #2C3E50, #3498DB)',
         text: '静かな夜',
         emoji: '🌙✨',
-        elements: ['🌲', '🌲', '🦉']
+        elements: [
+          { src: './assets/lemon.png', size: 40 },
+          { src: './assets/piyo.png', size: 50 }
+        ]
       };
     } else if (count <= 2) {
       return {
         background: 'linear-gradient(to bottom, #FFB75E, #ED8F03)',
         text: 'あたたかい夕暮れ',
         emoji: '🌅',
-        elements: ['🌻', '🐇', '🌻']
+        elements: [
+          { src: './assets/pon.png', size: 60 },
+          { src: './assets/lemon.png', size: 45 }
+        ]
       };
     } else {
       return {
         background: 'linear-gradient(to bottom, #83a4d4, #b6fbff)',
         text: 'にぎやかな晴れの日！',
         emoji: '☀️',
-        elements: ['🐇', '🌸', '🐇', '🦋', '🌸']
+        elements: [
+          { src: './assets/usa.png', size: 70 },
+          { src: './assets/pon.png', size: 60 },
+          { src: './assets/piyo.png', size: 50 }
+        ]
       };
     }
   };
@@ -91,15 +101,24 @@ export default function DiaryView({ appData, setAppData }) {
         {/* 動的な景色 */}
         <div style={{ 
           background: landscape.background, 
-          height: '180px', borderRadius: '16px', position: 'relative', overflow: 'hidden',
+          height: '200px', borderRadius: '16px', position: 'relative', overflow: 'hidden',
           boxShadow: '0 4px 15px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
         }}>
           <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.3)', marginBottom: '16px' }}>
             {landscape.emoji} {landscape.text}
           </h3>
-          <div style={{ display: 'flex', gap: '16px', fontSize: '32px' }}>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', height: '80px' }}>
             {landscape.elements.map((el, i) => (
-              <span key={i} style={{ animation: `bounce ${2 + i * 0.2}s infinite ease-in-out` }}>{el}</span>
+              <img 
+                key={i} 
+                src={el.src} 
+                alt="character"
+                style={{ 
+                  height: `${el.size}px`, 
+                  objectFit: 'contain',
+                  animation: `bounce ${2 + i * 0.2}s infinite ease-in-out` 
+                }} 
+              />
             ))}
           </div>
           <style>{`
