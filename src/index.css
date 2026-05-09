@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+:root {
+  --color-bg: #FFFFFF;
+  --color-text-main: #5C5C5C;
+  --color-text-sub: #A0A0A0;
+  
+  /* Category Colors */
+  --color-todo: #FFF8C9; /* 淡いレモンイエロー/クリーム */
+  --color-routine: #E2F3E8; /* 淡いミント */
+  --color-relax: #E1F0FC; /* 淡い水色 */
+  
+  --color-border: #F2F2F2;
+  --color-border-dark: #E5E5E5;
+  
+  /* UI Colors */
+  --color-primary: #FFD166;
+  --color-tray-bg: #FDFDFD;
+  --color-shadow: rgba(0, 0, 0, 0.04);
+  
+  --font-family: 'Kosugi Maru', 'Noto Sans JP', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  line-height: 1.6;
+}
+
+/* Layout Utilities */
+.app-container {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 15px rgba(0,0,0,0.02);
+}
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px; /* Space for bottom nav */
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  height: 64px;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  max-width: 480px;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-sub);
+  font-size: 11px;
+  cursor: pointer;
+  flex: 1;
+  height: 100%;
+  transition: all 0.2s;
+  gap: 4px;
+}
+
+.nav-item.active {
+  color: var(--color-text-main);
+}
+
+/* Header */
+.app-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.app-title {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cards */
+.card {
+  background: var(--color-bg);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 16px 20px;
+  box-shadow: 0 4px 12px var(--color-shadow);
+  border: 1px solid var(--color-border);
+  transition: transform 0.2s;
+}
+
+/* Buttons */
+.fab {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border-dark);
+  box-shadow: 0 4px 12px var(--color-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 90;
+  color: var(--color-text-main);
+}
+
+/* Utility Classes */
+.text-todo { color: #D4B01A; }
+.text-routine { color: #5B9E77; }
+.text-relax { color: #6296C2; }
+
+/* Sticky Notes */
+.sticky-note {
+  border-radius: 4px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: transform 0.1s;
+}
+
+.sticky-note.todo { 
+  background-color: var(--color-todo); 
+  background-image: url('/assets/fusen1.png'); 
+}
+.sticky-note.routine { 
+  background-color: var(--color-routine); 
+  background-image: url('/assets/fusen2.png'); 
+}
+.sticky-note.relax { 
+  background-color: var(--color-relax); 
+  background-image: url('/assets/fusen3.png'); 
+}
+
+/* Scrollbar Hiding Utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
