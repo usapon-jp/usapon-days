@@ -175,25 +175,6 @@ export default function ScheduleView({ appData, setAppData }) {
     const nextDateKey = format(currentDate, 'yyyy-MM-dd');
     
     dragRef.current.currentDateKey = nextDateKey;
-    const currentNoteId = dragRef.current.id;
-    
-    setAppData(prevData => {
-      const note = (prevData.schedule[prevDateKey] || []).find(n => n.id === currentNoteId);
-      if (!note) return prevData;
-      
-      const oldDayNotes = prevData.schedule[prevDateKey].filter(n => n.id !== currentNoteId);
-      const nextDayNotes = prevData.schedule[nextDateKey] || [];
-      
-      return {
-        ...prevData,
-        schedule: {
-          ...prevData.schedule,
-          [prevDateKey]: oldDayNotes,
-          [nextDateKey]: [...nextDayNotes, note]
-        }
-      };
-    });
-
     setSelectedDate(currentDate);
   };
 
@@ -205,19 +186,8 @@ export default function ScheduleView({ appData, setAppData }) {
       return;
     }
 
-    const now = Date.now();
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-
-    if (type === 'move') {
-      if (now - lastTapRef.current.time < 300 && lastTapRef.current.id === note.id) {
-        setActiveNoteId(note.id);
-        setShowTray(true);
-        lastTapRef.current = { time: 0, id: null };
-        return;
-      }
-      lastTapRef.current = { time: now, id: note.id };
-    }
 
     dragRef.current = {
       type,
@@ -558,9 +528,13 @@ export default function ScheduleView({ appData, setAppData }) {
             <div key={hour} style={{ height: '60px', borderBottom: '1px solid var(--color-border)' }} />
           ))}
 
-          {dailySchedule.filter(n => n.status !== 'completed').map(originalNote => {
-            const note = (previewNote && previewNote.id === originalNote.id) ? previewNote : originalNote;
-            
+          {(() => {
+            const activeNotes = dailySchedule.filter(n => n.status !== 'completed' && n.id !== previewNote?.id);
+            if (previewNote && dragRef.current?.currentDateKey === dateKey) {
+              activeNotes.push(previewNote);
+            }
+            return activeNotes;
+          })().map(note => {
             const top = (note.startTime - START_HOUR * 60) * PIXELS_PER_MINUTE;
             const height = note.durationMin * PIXELS_PER_MINUTE;
             const isDragging = dragState?.id === note.id && isDragMode;
@@ -584,6 +558,16 @@ export default function ScheduleView({ appData, setAppData }) {
                   userSelect: 'none'
                 }}
                 onPointerDown={(e) => handlePointerDown(e, note, 'move')}
+                onClick={(e) => {
+                  const now = Date.now();
+                  if (now - lastTapRef.current.time < 500 && lastTapRef.current.id === note.id) {
+                    setActiveNoteId(note.id);
+                    setShowTray(true);
+                    lastTapRef.current = { time: 0, id: null };
+                  } else {
+                    lastTapRef.current = { time: now, id: note.id };
+                  }
+                }}
                 onContextMenu={(e) => { e.preventDefault(); }}
               >
                 <div 
