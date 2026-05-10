@@ -5,6 +5,10 @@ const defaultData = {
   schedule: {}, // { 'YYYY-MM-DD': [ { id, title, category, durationMin, startTime, status } ] }
   records: {}, // 日記や記録
   points: 0,
+  settings: {
+    startHour: 6,
+    endHour: 24
+  }
 };
 
 export const loadAppData = () => {

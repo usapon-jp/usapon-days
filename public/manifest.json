@@ -7,16 +7,9 @@
   "theme_color": "#5B9E77",
   "icons": [
     {
-      "src": "./assets/usa.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./assets/usa.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "./assets/usapon_icon.png",
+      "sizes": "any",
+      "type": "image/png"
     }
   ]
 }

@@ -3,14 +3,15 @@ import { Plus, CheckCircle2, MoveRight, Coffee, ListTodo, Trash2 } from 'lucide-
 import { format } from 'date-fns';
 import CreateNoteModal from './CreateNoteModal';
 
-const START_HOUR = 6;
-const END_HOUR = 24;
 const PIXELS_PER_MINUTE = 1; 
 const SNAP_MINUTES = 15;
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export default function ScheduleView({ appData, setAppData }) {
+  const START_HOUR = appData.settings?.startHour ?? 6;
+  const END_HOUR = appData.settings?.endHour ?? 24;
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
   
