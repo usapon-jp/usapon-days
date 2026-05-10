@@ -181,17 +181,7 @@ export default function ScheduleView({ appData, setAppData }) {
   const handlePointerDown = (e, note, type) => {
     e.stopPropagation();
     
-    // Double tap check
-    const now = Date.now();
-    if (now - lastTapRef.current.time < 400 && lastTapRef.current.id === note.id) {
-      setActiveNoteId(note.id);
-      setShowTray(true);
-      lastTapRef.current = { time: 0, id: null };
-      if (longPressTimer.current) clearTimeout(longPressTimer.current);
-      return;
-    } else {
-      lastTapRef.current = { time: now, id: note.id };
-    }
+
 
     if (showTray) {
       setShowTray(false);
@@ -199,8 +189,8 @@ export default function ScheduleView({ appData, setAppData }) {
       return;
     }
 
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
 
     dragRef.current = {
       type,
@@ -244,8 +234,8 @@ export default function ScheduleView({ appData, setAppData }) {
   const handlePointerMove = (e) => {
     if (!dragRef.current) return;
     
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
     
     const deltaX = clientX - dragRef.current.startX;
     const deltaY = clientY - dragRef.current.startY;
@@ -480,30 +470,10 @@ export default function ScheduleView({ appData, setAppData }) {
     return d;
   });
 
-  // Character logic
-  const todoCount = dailySchedule.filter(n => n.category === 'todo' && n.status !== 'completed').length;
-  const routineCount = dailySchedule.filter(n => n.category === 'routine' && n.status !== 'completed').length;
-  const allCompleted = dailySchedule.length > 0 && dailySchedule.every(n => n.status === 'completed');
 
-  let characterImg = '/assets/piyo.png';
-  let message = '今日もゆっくりいこう';
-  
-  if (allCompleted) {
-    characterImg = '/assets/piyo.png';
-    message = '今日も一日お疲れ様！';
-  } else if (todoCount > 2) {
-    characterImg = '/assets/usa.png';
-    message = 'ちいさく進めば大丈夫';
-  } else if (routineCount > 2) {
-    characterImg = '/assets/pon.png';
-    message = 'ルーティンをこなしてえらい！';
-  } else if (dailySchedule.length === 0) {
-    characterImg = '/assets/piyo.png';
-    message = '今日はのんびりする日かな？';
-  }
 
   return (
-    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ position: 'relative' }}>
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -549,7 +519,7 @@ export default function ScheduleView({ appData, setAppData }) {
         </div>
       </div>
 
-      <div key={dateKey} className="slide-in" style={{ padding: '20px 20px 80px', display: 'flex', flex: 1, overflowY: 'auto' }} ref={containerRef}>
+      <div key={dateKey} className="slide-in" style={{ padding: '20px 20px 80px', display: 'flex', flex: 1 }} ref={containerRef}>
         <div style={{ width: '50px', flexShrink: 0, borderRight: '1px solid var(--color-border)' }}>
           {hours.map(hour => (
             <div key={hour} style={{ height: '60px', color: 'var(--color-text-sub)', fontSize: '12px', position: 'relative' }}>
@@ -593,7 +563,11 @@ export default function ScheduleView({ appData, setAppData }) {
                   userSelect: 'none'
                 }}
                 onPointerDown={(e) => handlePointerDown(e, note, 'move')}
-                onClick={(e) => { e.stopPropagation(); }}
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  setActiveNoteId(note.id);
+                  setShowTray(true);
+                }}
                 onContextMenu={(e) => { e.preventDefault(); }}
               >
                 <div 
@@ -729,22 +703,7 @@ export default function ScheduleView({ appData, setAppData }) {
         </div>
       )}
 
-      {/* Character Display */}
-      <div style={{ 
-        position: 'fixed', bottom: '150px', right: '20px', 
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-        zIndex: 50, pointerEvents: 'none'
-      }}>
-        <div style={{ 
-          backgroundColor: '#fff', padding: '6px 12px', borderRadius: '12px', 
-          fontSize: '11px', boxShadow: '0 2px 8px var(--color-shadow)',
-          border: '1px solid var(--color-border)',
-          maxWidth: '120px', textAlign: 'center'
-        }}>
-          {message}
-        </div>
-        <img src={characterImg} alt="character" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-      </div>
+
     </div>
   );
 }
