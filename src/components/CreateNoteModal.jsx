@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Star, Clock } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'todo', label: 'TODO', color: 'var(--color-todo)', textColor: '#D4B01A' },
@@ -9,7 +9,7 @@ const CATEGORIES = [
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
-export default function CreateNoteModal({ onClose, onSave }) {
+export default function CreateNoteModal({ appData, onClose, onSave }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('todo');
   const [durationMin, setDurationMin] = useState(30);
@@ -18,6 +18,15 @@ export default function CreateNoteModal({ onClose, onSave }) {
   const [isRepeat, setIsRepeat] = useState(false);
   const [repeatType, setRepeatType] = useState('daily');
   const [repeatDays, setRepeatDays] = useState([]); // 0:日, 1:月...
+
+  const favorites = appData?.favorites || [];
+  const history = appData?.history || [];
+
+  const handleSelectTemplate = (tpl) => {
+    setTitle(tpl.title);
+    setCategory(tpl.category);
+    setDurationMin(tpl.durationMin);
+  };
 
   const toggleDay = (dayIndex) => {
     if (repeatDays.includes(dayIndex)) {
@@ -66,6 +75,49 @@ export default function CreateNoteModal({ onClose, onSave }) {
         </button>
 
         <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '24px' }}>付箋をつくる</h3>
+
+        {/* お気に入りと履歴チップ */}
+        {(favorites.length > 0 || history.length > 0) && (
+          <div style={{ marginBottom: '24px' }}>
+            {favorites.length > 0 && (
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                  <Star size={14} fill="#FFD700" color="#FFD700" />
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-sub)' }}>お気に入り</span>
+                </div>
+                <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {favorites.map((fav, i) => (
+                    <button 
+                      key={i} onClick={() => handleSelectTemplate(fav)}
+                      style={{ flexShrink: 0, padding: '6px 12px', borderRadius: '16px', border: '1px solid var(--color-border)', backgroundColor: '#fff', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      {fav.title} <span style={{ color: 'var(--color-text-sub)', fontSize: '10px' }}>{fav.durationMin}分</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {history.length > 0 && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                  <Clock size={14} color="var(--color-text-sub)" />
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-sub)' }}>最近使った付箋</span>
+                </div>
+                <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {history.map((hist, i) => (
+                    <button 
+                      key={i} onClick={() => handleSelectTemplate(hist)}
+                      style={{ flexShrink: 0, padding: '6px 12px', borderRadius: '16px', border: '1px dashed var(--color-border)', backgroundColor: '#fafafa', fontSize: '12px', color: 'var(--color-text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      {hist.title} <span style={{ color: 'var(--color-text-sub)', fontSize: '10px' }}>{hist.durationMin}分</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ marginBottom: '24px' }}>
           <input 

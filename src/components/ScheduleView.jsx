@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, CheckCircle2, MoveRight, Coffee, ListTodo, Trash2 } from 'lucide-react';
+import { Plus, CheckCircle2, MoveRight, Coffee, ListTodo, Trash2, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import CreateNoteModal from './CreateNoteModal';
 
@@ -75,6 +75,11 @@ export default function ScheduleView({ appData, setAppData }) {
         };
       }
       
+      const currentHistory = prev.history || [];
+      const newHistoryItem = { title: noteData.title, category: noteData.category, durationMin: noteData.durationMin };
+      const filteredHistory = currentHistory.filter(h => h.title !== noteData.title);
+      nextState.history = [newHistoryItem, ...filteredHistory].slice(0, 20);
+      
       return nextState;
     });
     setIsModalOpen(false);
@@ -125,6 +130,18 @@ export default function ScheduleView({ appData, setAppData }) {
         [dateKey]: (prev.schedule[dateKey] || []).filter(n => n.id !== id)
       }
     }));
+  };
+
+  const toggleFavorite = (note) => {
+    setAppData(prev => {
+      const favs = prev.favorites || [];
+      const isFav = favs.some(f => f.title === note.title && f.category === note.category);
+      if (isFav) {
+        return { ...prev, favorites: favs.filter(f => !(f.title === note.title && f.category === note.category)) };
+      } else {
+        return { ...prev, favorites: [...favs, { title: note.title, category: note.category, durationMin: note.durationMin }] };
+      }
+    });
   };
 
   const applyNoteUpdate = (noteId, newStartTime, newDurationMin, targetDateKey) => {
@@ -548,6 +565,7 @@ export default function ScheduleView({ appData, setAppData }) {
             const height = note.durationMin * PIXELS_PER_MINUTE;
             const isDragging = dragState?.id === note.id && isDragMode;
             const isActive = activeNoteId === note.id;
+            const isFavorite = (appData.favorites || []).some(f => f.title === note.title && f.category === note.category);
             
             return (
               <div 
@@ -568,6 +586,12 @@ export default function ScheduleView({ appData, setAppData }) {
                 onPointerDown={(e) => handlePointerDown(e, note, 'move')}
                 onContextMenu={(e) => { e.preventDefault(); }}
               >
+                <div 
+                  onClick={(e) => { e.stopPropagation(); toggleFavorite(note); }}
+                  style={{ position: 'absolute', top: '4px', right: '4px', padding: '4px', cursor: 'pointer', zIndex: 10 }}
+                >
+                  <Star size={16} fill={isFavorite ? '#FFD700' : 'none'} color={isFavorite ? '#FFD700' : 'rgba(0,0,0,0.2)'} />
+                </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', padding: '0 8px' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', textAlign: 'center', wordBreak: 'break-word', lineHeight: '1.2' }}>{note.title}</div>
                   <div style={{ fontSize: '11px', color: 'var(--color-text-sub)', marginTop: '4px' }}>
@@ -629,7 +653,7 @@ export default function ScheduleView({ appData, setAppData }) {
       </div>
 
       {isModalOpen && (
-        <CreateNoteModal onClose={() => setIsModalOpen(false)} onSave={handleSaveNote} />
+        <CreateNoteModal appData={appData} onClose={() => setIsModalOpen(false)} onSave={handleSaveNote} />
       )}
 
       {showTray && (
