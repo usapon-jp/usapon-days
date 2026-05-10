@@ -7,6 +7,8 @@ import DiaryView from './components/DiaryView';
 import SettingsView from './components/SettingsView';
 import TodoListView from './components/TodoListView';
 
+import CalendarView from './components/CalendarView';
+
 function App() {
   const [currentTab, setCurrentTab] = useState('schedule');
   const [appData, setAppData] = useState(loadAppData());
@@ -18,11 +20,12 @@ function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'home': return <HomeView appData={appData} setAppData={setAppData} onNavigate={setCurrentTab} />;
-      case 'schedule': return <ScheduleView appData={appData} setAppData={setAppData} />;
+      case 'calendar': return <CalendarView appData={appData} setAppData={setAppData} onNavigate={setCurrentTab} />;
+      case 'today': return <ScheduleView appData={appData} setAppData={setAppData} />;
       case 'diary': return <DiaryView appData={appData} setAppData={setAppData} />;
       case 'settings': return <SettingsView appData={appData} setAppData={setAppData} />;
       case 'todo': return <TodoListView appData={appData} setAppData={setAppData} onNavigate={setCurrentTab} />;
-      default: return <HomeView appData={appData} setAppData={setAppData} onNavigate={setCurrentTab} />;
+      default: return <ScheduleView appData={appData} setAppData={setAppData} />;
     }
   };
 
@@ -35,19 +38,25 @@ function App() {
       <nav className="bottom-nav">
         <div className={`nav-item ${currentTab === 'home' ? 'active' : ''}`} onClick={() => setCurrentTab('home')}>
           <Home size={24} strokeWidth={currentTab === 'home' ? 2.5 : 2} />
-          <span>ホーム</span>
+          <span style={{ fontSize: '10px' }}>ホーム</span>
         </div>
-        <div className={`nav-item ${currentTab === 'schedule' ? 'active' : ''}`} onClick={() => setCurrentTab('schedule')}>
-          <Calendar size={24} strokeWidth={currentTab === 'schedule' ? 2.5 : 2} />
-          <span>スケジュール</span>
+        <div className={`nav-item ${currentTab === 'calendar' ? 'active' : ''}`} onClick={() => setCurrentTab('calendar')}>
+          <Calendar size={24} strokeWidth={currentTab === 'calendar' ? 2.5 : 2} />
+          <span style={{ fontSize: '10px' }}>カレンダー</span>
+        </div>
+        <div className={`nav-item ${currentTab === 'today' ? 'active' : ''}`} onClick={() => setCurrentTab('today')}>
+          <div style={{ backgroundColor: 'var(--color-primary)', borderRadius: '50%', padding: '8px', color: '#fff', transform: 'translateY(-10px)', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+            <Calendar size={28} strokeWidth={2.5} color="#fff" />
+          </div>
+          <span style={{ fontSize: '10px', marginTop: '-12px' }}>今日の予定</span>
         </div>
         <div className={`nav-item ${currentTab === 'diary' ? 'active' : ''}`} onClick={() => setCurrentTab('diary')}>
           <BookHeart size={24} strokeWidth={currentTab === 'diary' ? 2.5 : 2} />
-          <span>日記</span>
+          <span style={{ fontSize: '10px' }}>記録</span>
         </div>
         <div className={`nav-item ${currentTab === 'settings' ? 'active' : ''}`} onClick={() => setCurrentTab('settings')}>
           <Settings size={24} strokeWidth={currentTab === 'settings' ? 2.5 : 2} />
-          <span>設定</span>
+          <span style={{ fontSize: '10px' }}>設定</span>
         </div>
       </nav>
     </div>
