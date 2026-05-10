@@ -203,7 +203,7 @@ export default function CreateNoteModal({ onClose, onSave }) {
             transition: 'background-color 0.2s'
           }}
         >
-          机に貼る
+          スケジュールに貼る
         </button>
 
       </div>

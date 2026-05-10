@@ -17,10 +17,52 @@ export default function TodoListView({ appData, setAppData, onNavigate }) {
     const newNote = {
       id: generateId(),
       ...noteData,
-      status: currentView === 'paused' ? 'paused' : 'unscheduled'
+      status: currentView === 'paused' ? 'paused' : 'active',
+      startTime: 12 * 60,
+      createdAt: format(new Date(), 'yyyy-MM-dd')
     };
-    setAppData(prev => ({ ...prev, todos: [...prev.todos, newNote] }));
+
+    if (currentView === 'paused') {
+      setAppData(prev => ({ ...prev, todos: [...prev.todos, newNote] }));
+      setIsModalOpen(false);
+      return;
+    }
+
+    const dateKey = format(new Date(), 'yyyy-MM-dd');
+    
+    setAppData(prev => {
+      const nextState = { ...prev };
+      
+      if (noteData.repeat) {
+        nextState.routines = [...(nextState.routines || []), newNote];
+        
+        let shouldAppearToday = false;
+        if (noteData.repeat.type === 'daily') shouldAppearToday = true;
+        if (noteData.repeat.type === 'weekly') shouldAppearToday = noteData.repeat.days.includes(new Date().getDay());
+        if (noteData.repeat.type === 'monthly') shouldAppearToday = true; 
+        if (noteData.repeat.type === 'yearly') shouldAppearToday = true;
+
+        if (shouldAppearToday) {
+          nextState.schedule = {
+            ...nextState.schedule,
+            [dateKey]: [...(nextState.schedule[dateKey] || []), { ...newNote, originalRoutineId: newNote.id }]
+          };
+          nextState.generatedRoutines = {
+            ...(nextState.generatedRoutines || {}),
+            [dateKey]: [...(nextState.generatedRoutines?.[dateKey] || []), newNote.id]
+          };
+        }
+      } else {
+        nextState.schedule = {
+          ...nextState.schedule,
+          [dateKey]: [...(nextState.schedule[dateKey] || []), newNote]
+        };
+      }
+      return nextState;
+    });
+
     setIsModalOpen(false);
+    onNavigate('schedule');
   };
 
   const openCreateModal = (category = 'todo') => {
