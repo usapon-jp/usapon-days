@@ -1,17 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function SettingsView({ appData, setAppData }) {
   const startHour = appData.settings?.startHour ?? 6;
   const endHour = appData.settings?.endHour ?? 24;
+  const isPremium = appData.settings?.isPremium || false;
+
+  const [secretWord, setSecretWord] = useState('');
 
   const updateSettings = (key, value) => {
     setAppData(prev => ({
       ...prev,
       settings: {
         ...(prev.settings || { startHour: 6, endHour: 24 }),
-        [key]: parseInt(value, 10)
+        [key]: typeof value === 'string' && key !== 'startHour' && key !== 'endHour' ? value : parseInt(value, 10)
       }
     }));
+  };
+
+  const handleUnlockPremium = () => {
+    if (secretWord === 'うさぽん' || secretWord === 'usapon') {
+      setAppData(prev => ({
+        ...prev,
+        settings: { ...(prev.settings || {}), isPremium: true }
+      }));
+      setSecretWord('');
+      alert('プレミアム機能が解放されました！🎉');
+    } else {
+      alert('合言葉が違います🐰💦');
+    }
   };
 
   return (
@@ -45,6 +61,37 @@ export default function SettingsView({ appData, setAppData }) {
           ※スケジュールのタイムラインの開始と終了時間を設定します。<br />
           夜遅くまで活動する方や、早起きな方に合わせて調整できます。
         </p>
+      </div>
+
+      <div className="card" style={{ marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#E8A317' }}>👑 プレミアム機能</h3>
+        {isPremium ? (
+          <div style={{ backgroundColor: '#FFF9E6', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>
+            <p style={{ fontWeight: 'bold', color: '#B8860B', marginBottom: '8px' }}>プレミアム機能解放済みです！✨</p>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-sub)' }}>日記に写真を10枚まで追加できるようになりました。</p>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-main)', marginBottom: '12px', lineHeight: '1.5' }}>
+              合言葉を入力すると、日記の写真が10枚まで貼れるようになります！
+            </p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input 
+                type="text" 
+                value={secretWord}
+                onChange={(e) => setSecretWord(e.target.value)}
+                placeholder="合言葉を入力..."
+                style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', outline: 'none' }}
+              />
+              <button 
+                onClick={handleUnlockPremium}
+                style={{ padding: '0 16px', borderRadius: '8px', backgroundColor: '#E8A317', color: '#fff', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                解放
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ margin: '0' }}>

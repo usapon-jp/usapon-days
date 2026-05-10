@@ -7,8 +7,13 @@ export default function DiaryView({ appData, setAppData }) {
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
   
   // 今日の記録データ
-  const todayRecord = appData.records?.[dateKey] || { text: '', photo: null, isLandscapeRevealed: false };
+  const todayRecord = appData.records?.[dateKey] || { text: '', isLandscapeRevealed: false };
   const dailySchedule = appData.schedule?.[dateKey] || [];
+  const isPremium = appData.settings?.isPremium || false;
+  
+  // 写真データのマイグレーション（古いphotoを配列に変換）
+  const photos = todayRecord.photos || (todayRecord.photo ? [{ url: todayRecord.photo, comment: '' }] : []);
+
   
   // 完了したタスクのリスト
   const completedNotes = dailySchedule.filter(n => n.status === 'completed');
@@ -30,16 +35,29 @@ export default function DiaryView({ appData, setAppData }) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
+        const newPhotos = [...photos, { url: reader.result, comment: '' }];
         setAppData(prev => ({
           ...prev,
           records: {
             ...(prev.records || {}),
-            [dateKey]: { ...todayRecord, photo: reader.result }
+            [dateKey]: { ...todayRecord, photos: newPhotos }
           }
         }));
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handlePhotoCommentChange = (index, comment) => {
+    const newPhotos = [...photos];
+    newPhotos[index].comment = comment;
+    setAppData(prev => ({
+      ...prev,
+      records: {
+        ...(prev.records || {}),
+        [dateKey]: { ...todayRecord, photos: newPhotos }
+      }
+    }));
   };
 
   const handleRevealLandscape = () => {
@@ -200,40 +218,64 @@ export default function DiaryView({ appData, setAppData }) {
           />
         </div>
 
-        {/* 写真のアップロード（元の機能に復元） */}
+        {/* 写真のアップロード（プレミアム対応） */}
         <div>
-          <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-text-sub)', marginBottom: '12px' }}>今日の1枚（写真）</h3>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <div 
-              style={{
-                width: '100%', maxWidth: '300px', backgroundColor: '#fff', padding: '12px 12px 40px 12px',
-                borderRadius: '4px', boxShadow: '0 8px 20px rgba(0,0,0,0.12)', transform: 'rotate(-2deg)',
-                cursor: 'pointer', position: 'relative'
-              }}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <div style={{ 
-                width: '100%', aspectRatio: '1/1', backgroundColor: '#F0F0F0', display: 'flex', flexDirection: 'column', 
-                alignItems: 'center', justifyContent: 'center', overflow: 'hidden' 
-              }}>
-                {todayRecord.photo ? (
-                  <img src={todayRecord.photo} alt="アップロードされた写真" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <>
-                    <Camera size={32} color="#ccc" style={{ marginBottom: '8px' }} />
-                    <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 'bold' }}>タップして写真を追加</span>
-                  </>
+          <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-text-sub)', marginBottom: '12px' }}>
+            思い出の写真 {isPremium && `(${photos.length}/10枚)`}
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
+            {photos.map((photoItem, idx) => (
+              <div key={idx} style={{ width: '100%', maxWidth: '300px', backgroundColor: '#fff', padding: '12px 12px 16px 12px', borderRadius: '4px', boxShadow: '0 8px 20px rgba(0,0,0,0.12)', transform: idx % 2 === 0 ? 'rotate(-2deg)' : 'rotate(2deg)' }}>
+                <div style={{ width: '100%', aspectRatio: '1/1', backgroundColor: '#F0F0F0', overflow: 'hidden', marginBottom: '12px' }}>
+                  <img src={photoItem.url} alt="思い出" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                {isPremium && (
+                  <input 
+                    type="text" 
+                    value={photoItem.comment}
+                    onChange={(e) => handlePhotoCommentChange(idx, e.target.value)}
+                    placeholder="写真のコメントを記入..."
+                    style={{ width: '100%', padding: '8px', border: 'none', borderBottom: '1px dashed #ccc', outline: 'none', fontSize: '13px', textAlign: 'center', backgroundColor: 'transparent' }}
+                  />
                 )}
               </div>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handlePhotoUpload} 
-                accept="image/*" 
-                style={{ display: 'none' }} 
-              />
-            </div>
+            ))}
+
+            {((!isPremium && photos.length === 0) || (isPremium && photos.length < 10)) && (
+              <div 
+                style={{
+                  width: '100%', maxWidth: '300px', backgroundColor: '#fff', padding: '12px 12px 40px 12px',
+                  borderRadius: '4px', boxShadow: '0 8px 20px rgba(0,0,0,0.06)', border: '2px dashed #ddd',
+                  cursor: 'pointer', position: 'relative'
+                }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <div style={{ 
+                  width: '100%', aspectRatio: '1/1', backgroundColor: '#fafafa', display: 'flex', flexDirection: 'column', 
+                  alignItems: 'center', justifyContent: 'center' 
+                }}>
+                  <Camera size={32} color="#ccc" style={{ marginBottom: '8px' }} />
+                  <span style={{ fontSize: '13px', color: '#aaa', fontWeight: 'bold' }}>タップして写真を追加</span>
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handlePhotoUpload} 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                />
+              </div>
+            )}
           </div>
+
+          {!isPremium && (
+            <div style={{ marginTop: '16px', backgroundColor: '#FFF9E6', padding: '12px', borderRadius: '12px', textAlign: 'center', border: '1px solid #FDE38A' }}>
+              <p style={{ fontSize: '12px', color: '#B8860B', fontWeight: 'bold', margin: 0 }}>
+                👑 合言葉を入れると写真が10枚まで貼れるようになります！
+              </p>
+            </div>
+          )}
         </div>
         
         <div style={{ height: '40px' }} /> {/* 余白 */}
