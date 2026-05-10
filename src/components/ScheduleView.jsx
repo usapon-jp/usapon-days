@@ -180,6 +180,19 @@ export default function ScheduleView({ appData, setAppData }) {
 
   const handlePointerDown = (e, note, type) => {
     e.stopPropagation();
+    
+    // Double tap check
+    const now = Date.now();
+    if (now - lastTapRef.current.time < 400 && lastTapRef.current.id === note.id) {
+      setActiveNoteId(note.id);
+      setShowTray(true);
+      lastTapRef.current = { time: 0, id: null };
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      return;
+    } else {
+      lastTapRef.current = { time: now, id: note.id };
+    }
+
     if (showTray) {
       setShowTray(false);
       setActiveNoteId(null);
@@ -467,54 +480,76 @@ export default function ScheduleView({ appData, setAppData }) {
     return d;
   });
 
+  // Character logic
+  const todoCount = dailySchedule.filter(n => n.category === 'todo' && n.status !== 'completed').length;
+  const routineCount = dailySchedule.filter(n => n.category === 'routine' && n.status !== 'completed').length;
+  const allCompleted = dailySchedule.length > 0 && dailySchedule.every(n => n.status === 'completed');
+
+  let characterImg = '/assets/piyo.png';
+  let message = '今日もゆっくりいこう';
+  
+  if (allCompleted) {
+    characterImg = '/assets/piyo.png';
+    message = '今日も一日お疲れ様！';
+  } else if (todoCount > 2) {
+    characterImg = '/assets/usa.png';
+    message = 'ちいさく進めば大丈夫';
+  } else if (routineCount > 2) {
+    characterImg = '/assets/pon.png';
+    message = 'ルーティンをこなしてえらい！';
+  } else if (dailySchedule.length === 0) {
+    characterImg = '/assets/piyo.png';
+    message = '今日はのんびりする日かな？';
+  }
+
   return (
     <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-bg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>
-            {formattedDateString}
-          </h2>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
+        <div style={{ padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>
+              {formattedDateString}
+            </h2>
+          </div>
+        </div>
+
+        <div 
+          className="hide-scrollbar"
+          style={{ 
+            display: 'flex', overflowX: 'auto', padding: '8px 20px 12px', 
+            gap: '12px',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
+          {dateStripList.map((d, i) => {
+            const dKey = format(d, 'yyyy-MM-dd');
+            const isSelected = dKey === dateKey;
+            const isToday = dKey === format(new Date(), 'yyyy-MM-dd');
+            
+            return (
+              <div 
+                key={i} 
+                data-date={dKey}
+                onClick={() => setSelectedDate(d)}
+                style={{ 
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  minWidth: '44px', height: '56px', borderRadius: '16px',
+                  backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
+                  color: isSelected ? '#fff' : (isToday ? 'var(--color-primary)' : 'var(--color-text-main)'),
+                  cursor: 'pointer', flexShrink: 0,
+                  border: isToday && !isSelected ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <span style={{ fontSize: '10px', fontWeight: isSelected ? 'bold' : 'normal', pointerEvents: 'none' }}>{weekdays[d.getDay()]}</span>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', pointerEvents: 'none' }}>{d.getDate()}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div 
-        className="hide-scrollbar"
-        style={{ 
-          display: 'flex', overflowX: 'auto', padding: '8px 20px', 
-          gap: '12px', borderBottom: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-bg)',
-          position: 'sticky', top: 0, zIndex: 10,
-          WebkitOverflowScrolling: 'touch'
-        }}
-      >
-        {dateStripList.map((d, i) => {
-          const dKey = format(d, 'yyyy-MM-dd');
-          const isSelected = dKey === dateKey;
-          const isToday = dKey === format(new Date(), 'yyyy-MM-dd');
-          
-          return (
-            <div 
-              key={i} 
-              data-date={dKey}
-              onClick={() => setSelectedDate(d)}
-              style={{ 
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                minWidth: '44px', height: '56px', borderRadius: '16px',
-                backgroundColor: isSelected ? 'var(--color-primary)' : 'transparent',
-                color: isSelected ? '#fff' : (isToday ? 'var(--color-primary)' : 'var(--color-text-main)'),
-                cursor: 'pointer', flexShrink: 0,
-                border: isToday && !isSelected ? '2px solid var(--color-primary)' : '2px solid transparent',
-                transition: 'all 0.2s'
-              }}
-            >
-              <span style={{ fontSize: '10px', fontWeight: isSelected ? 'bold' : 'normal', pointerEvents: 'none' }}>{weekdays[d.getDay()]}</span>
-              <span style={{ fontSize: '18px', fontWeight: 'bold', pointerEvents: 'none' }}>{d.getDate()}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ padding: '20px 20px 80px', display: 'flex', flex: 1, overflowY: 'auto' }} ref={containerRef}>
+      <div key={dateKey} className="slide-in" style={{ padding: '20px 20px 80px', display: 'flex', flex: 1, overflowY: 'auto' }} ref={containerRef}>
         <div style={{ width: '50px', flexShrink: 0, borderRight: '1px solid var(--color-border)' }}>
           {hours.map(hour => (
             <div key={hour} style={{ height: '60px', color: 'var(--color-text-sub)', fontSize: '12px', position: 'relative' }}>
@@ -558,23 +593,14 @@ export default function ScheduleView({ appData, setAppData }) {
                   userSelect: 'none'
                 }}
                 onPointerDown={(e) => handlePointerDown(e, note, 'move')}
-                onClick={(e) => {
-                  const now = Date.now();
-                  if (now - lastTapRef.current.time < 500 && lastTapRef.current.id === note.id) {
-                    setActiveNoteId(note.id);
-                    setShowTray(true);
-                    lastTapRef.current = { time: 0, id: null };
-                  } else {
-                    lastTapRef.current = { time: now, id: note.id };
-                  }
-                }}
+                onClick={(e) => { e.stopPropagation(); }}
                 onContextMenu={(e) => { e.preventDefault(); }}
               >
                 <div 
                   onClick={(e) => { e.stopPropagation(); toggleFavorite(note); }}
                   style={{ position: 'absolute', top: '4px', right: '4px', padding: '4px', cursor: 'pointer', zIndex: 10 }}
                 >
-                  <Star size={16} fill={isFavorite ? '#FFD700' : 'none'} color={isFavorite ? '#FFD700' : 'rgba(0,0,0,0.2)'} />
+                  <Star size={16} fill={isFavorite ? '#FFD700' : 'none'} color={isFavorite ? '#FFD700' : 'rgba(0,0,0,0.2)'} strokeWidth={2.5} />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', padding: '0 8px' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', textAlign: 'center', wordBreak: 'break-word', lineHeight: '1.2' }}>{note.title}</div>
@@ -633,7 +659,7 @@ export default function ScheduleView({ appData, setAppData }) {
       )}
 
       <div className="fab" onClick={() => setIsModalOpen(true)}>
-        <Plus size={28} />
+        <Plus size={28} strokeWidth={2.5} />
       </div>
 
       {isModalOpen && (
@@ -658,11 +684,11 @@ export default function ScheduleView({ appData, setAppData }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <TrayButton icon={<CheckCircle2 color="#5B9E77" size={28} />} label="できた" action="できた" onClick={() => handleTrayAction('できた')} />
-            <TrayButton icon={<MoveRight color="#D4B01A" size={28} />} label="移動" action="移動" onClick={() => handleTrayAction('移動')} />
-            <TrayButton icon={<Coffee color="#6296C2" size={28} />} label="ひとやすみ" action="ひとやすみ" onClick={() => handleTrayAction('ひとやすみ')} />
-            <TrayButton icon={<ListTodo color="#A0A0A0" size={28} />} label="TODOに戻す" action="TODOに戻す" onClick={() => handleTrayAction('TODOに戻す')} />
-            <TrayButton icon={<Trash2 color="#A0A0A0" size={28} />} label="やめる" action="やめる" onClick={() => handleTrayAction('やめる')} />
+            <TrayButton icon={<CheckCircle2 color="#5B9E77" size={28} strokeWidth={2.5} />} label="できた" action="できた" onClick={() => handleTrayAction('できた')} />
+            <TrayButton icon={<MoveRight color="#D4B01A" size={28} strokeWidth={2.5} />} label="移動" action="移動" onClick={() => handleTrayAction('移動')} />
+            <TrayButton icon={<Coffee color="#6296C2" size={28} strokeWidth={2.5} />} label="ひとやすみ" action="ひとやすみ" onClick={() => handleTrayAction('ひとやすみ')} />
+            <TrayButton icon={<ListTodo color="#A0A0A0" size={28} strokeWidth={2.5} />} label="TODOに戻す" action="TODOに戻す" onClick={() => handleTrayAction('TODOに戻す')} />
+            <TrayButton icon={<Trash2 color="#A0A0A0" size={28} strokeWidth={2.5} />} label="やめる" action="やめる" onClick={() => handleTrayAction('やめる')} />
           </div>
         </div>
       )}
@@ -702,6 +728,23 @@ export default function ScheduleView({ appData, setAppData }) {
           </div>
         </div>
       )}
+
+      {/* Character Display */}
+      <div style={{ 
+        position: 'fixed', bottom: '150px', right: '20px', 
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+        zIndex: 50, pointerEvents: 'none'
+      }}>
+        <div style={{ 
+          backgroundColor: '#fff', padding: '6px 12px', borderRadius: '12px', 
+          fontSize: '11px', boxShadow: '0 2px 8px var(--color-shadow)',
+          border: '1px solid var(--color-border)',
+          maxWidth: '120px', textAlign: 'center'
+        }}>
+          {message}
+        </div>
+        <img src={characterImg} alt="character" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+      </div>
     </div>
   );
 }

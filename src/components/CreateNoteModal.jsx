@@ -144,9 +144,10 @@ export default function CreateNoteModal({ appData, onClose, onSave }) {
                   setCategory(cat.id);
                   if (cat.id !== 'routine') setIsRepeat(false);
                 }}
+                className={`sticky-note ${cat.id}`}
                 style={{ 
                   flex: 1, padding: '12px 0', borderRadius: '12px', border: 'none',
-                  backgroundColor: cat.color, color: cat.textColor, fontWeight: 'bold',
+                  color: cat.textColor, fontWeight: 'bold',
                   opacity: category === cat.id ? 1 : 0.4,
                   transform: category === cat.id ? 'scale(1.05)' : 'scale(1)',
                   transition: 'all 0.2s', cursor: 'pointer',
