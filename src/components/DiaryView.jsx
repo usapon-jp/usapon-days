@@ -1,13 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { format, addDays, subDays } from 'date-fns';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, Camera } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Camera, Sparkles } from 'lucide-react';
 
 export default function DiaryView({ appData, setAppData }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
   
   // 今日の記録データ
-  const todayRecord = appData.records?.[dateKey] || { text: '', photo: null };
+  const todayRecord = appData.records?.[dateKey] || { text: '', photo: null, isLandscapeRevealed: false };
   const dailySchedule = appData.schedule?.[dateKey] || [];
   
   // 完了したタスクのリスト
@@ -42,9 +42,21 @@ export default function DiaryView({ appData, setAppData }) {
     }
   };
 
+  const handleRevealLandscape = () => {
+    setAppData(prev => ({
+      ...prev,
+      records: {
+        ...(prev.records || {}),
+        [dateKey]: { ...todayRecord, isLandscapeRevealed: true }
+      }
+    }));
+  };
+
   // 景色を動的に生成
   const getLandscape = () => {
     const count = completedNotes.length;
+    const hasRoutine = completedNotes.some(n => n.category === 'routine');
+
     if (count === 0) {
       return {
         background: 'linear-gradient(to bottom, #2C3E50, #3498DB)',
@@ -98,38 +110,61 @@ export default function DiaryView({ appData, setAppData }) {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
-        {/* 動的な景色 */}
-        <div style={{ 
-          background: landscape.background, 
-          height: '200px', borderRadius: '16px', position: 'relative', overflow: 'hidden',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
-        }}>
-          <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.3)', marginBottom: '16px' }}>
-            {landscape.emoji} {landscape.text}
-          </h3>
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', height: '80px' }}>
-            {landscape.elements.map((el, i) => (
-              <img 
-                key={i} 
-                src={el.src} 
-                alt="character"
-                style={{ 
-                  height: `${el.size}px`, 
-                  objectFit: 'contain',
-                  animation: `bounce ${2 + i * 0.2}s infinite ease-in-out` 
-                }} 
-              />
-            ))}
-          </div>
-          <style>{`
-            @keyframes bounce {
-              0%, 100% { transform: translateY(0); }
-              50% { transform: translateY(-10px); }
-            }
-          `}</style>
-          <div style={{ position: 'absolute', bottom: '8px', right: '12px', color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontWeight: 'bold' }}>
-            できた付箋: {completedNotes.length}個
-          </div>
+        {/* 動的な景色（今日の一枚ボタンで表示される） */}
+        <div>
+          <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-text-sub)', marginBottom: '12px' }}>今日のおつかれさま風景</h3>
+          {!todayRecord.isLandscapeRevealed ? (
+            <div style={{ 
+              height: '140px', borderRadius: '16px', backgroundColor: '#fff', border: '2px dashed var(--color-border)',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '12px'
+            }}>
+              <p style={{ fontSize: '13px', color: 'var(--color-text-sub)', fontWeight: 'bold' }}>1日の終わりにタップしてね</p>
+              <button 
+                onClick={handleRevealLandscape}
+                style={{
+                  padding: '12px 24px', borderRadius: '24px', backgroundColor: '#5B9E77', color: '#fff',
+                  border: 'none', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer',
+                  boxShadow: '0 4px 10px rgba(91,158,119,0.3)', display: 'flex', alignItems: 'center', gap: '8px'
+                }}
+              >
+                <Sparkles size={20} />
+                今日の風景を見る
+              </button>
+            </div>
+          ) : (
+            <div style={{ 
+              background: landscape.background, 
+              height: '200px', borderRadius: '16px', position: 'relative', overflow: 'hidden',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
+            }}>
+              <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.3)', marginBottom: '16px' }}>
+                {landscape.emoji} {landscape.text}
+              </h3>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', height: '80px' }}>
+                {landscape.elements.map((el, i) => (
+                  <img 
+                    key={i} 
+                    src={el.src} 
+                    alt="character"
+                    style={{ 
+                      height: `${el.size}px`, 
+                      objectFit: 'contain',
+                      animation: `bounce ${2 + i * 0.2}s infinite ease-in-out` 
+                    }} 
+                  />
+                ))}
+              </div>
+              <style>{`
+                @keyframes bounce {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-10px); }
+                }
+              `}</style>
+              <div style={{ position: 'absolute', bottom: '8px', right: '12px', color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontWeight: 'bold' }}>
+                できた付箋: {completedNotes.length}個
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 完了したことリスト */}
@@ -165,9 +200,9 @@ export default function DiaryView({ appData, setAppData }) {
           />
         </div>
 
-        {/* 今日の1枚（ポラロイド風） */}
+        {/* 写真のアップロード（元の機能に復元） */}
         <div>
-          <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-text-sub)', marginBottom: '12px' }}>今日の1枚</h3>
+          <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-text-sub)', marginBottom: '12px' }}>今日の1枚（写真）</h3>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div 
               style={{
@@ -182,7 +217,7 @@ export default function DiaryView({ appData, setAppData }) {
                 alignItems: 'center', justifyContent: 'center', overflow: 'hidden' 
               }}>
                 {todayRecord.photo ? (
-                  <img src={todayRecord.photo} alt="今日の一枚" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={todayRecord.photo} alt="アップロードされた写真" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <>
                     <Camera size={32} color="#ccc" style={{ marginBottom: '8px' }} />
