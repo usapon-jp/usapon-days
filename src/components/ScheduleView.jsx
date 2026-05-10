@@ -127,6 +127,29 @@ export default function ScheduleView({ appData, setAppData }) {
     }));
   };
 
+  const applyNoteUpdate = (noteId, newStartTime, newDurationMin, targetDateKey) => {
+    setAppData(prev => {
+      const nextState = { ...prev };
+      const sourceDateKey = dragRef.current.originalDateKey;
+      
+      const note = (nextState.schedule[sourceDateKey] || []).find(n => n.id === noteId);
+      if (!note) return nextState;
+
+      const updatedNote = { ...note, startTime: newStartTime, durationMin: newDurationMin };
+
+      if (sourceDateKey === targetDateKey) {
+        nextState.schedule[targetDateKey] = nextState.schedule[targetDateKey].map(n => 
+          n.id === noteId ? updatedNote : n
+        );
+      } else {
+        nextState.schedule[sourceDateKey] = nextState.schedule[sourceDateKey].filter(n => n.id !== noteId);
+        nextState.schedule[targetDateKey] = [...(nextState.schedule[targetDateKey] || []), updatedNote];
+      }
+
+      return nextState;
+    });
+  };
+
   const handleEdgeDateSwitch = (dir, prevDateKey) => {
     if (!dragRef.current) return;
     
@@ -537,7 +560,10 @@ export default function ScheduleView({ appData, setAppData }) {
                   boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.2)' : '2px 2px 5px var(--color-shadow)',
                   transform: isDragging ? 'scale(1.02)' : 'none',
                   transition: isDragging ? 'none' : 'all 0.2s',
-                  display: 'flex', flexDirection: 'column'
+                  display: 'flex', flexDirection: 'column',
+                  touchAction: 'none',
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none'
                 }}
                 onPointerDown={(e) => handlePointerDown(e, note, 'move')}
                 onContextMenu={(e) => { e.preventDefault(); }}
