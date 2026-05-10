@@ -29,9 +29,10 @@ export default function ScheduleView({ appData, setAppData }) {
   const dragRef = useRef(null);
   const longPressTimer = useRef(null);
   const edgeSwitchTimer = useRef(null);
+  const lastTapRef = useRef({ time: 0, id: null });
   const [dragState, setDragState] = useState(null); 
   const [previewNote, setPreviewNote] = useState(null); 
-  const [floatingState, setFloatingState] = useState(null); 
+  const [isDragMode, setIsDragMode] = useState(false); 
   
   const containerRef = useRef(null);
 
@@ -162,9 +163,20 @@ export default function ScheduleView({ appData, setAppData }) {
       setActiveNoteId(null);
       return;
     }
-    
+
+    const now = Date.now();
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+    if (type === 'move') {
+      if (now - lastTapRef.current.time < 300 && lastTapRef.current.id === note.id) {
+        setActiveNoteId(note.id);
+        setShowTray(true);
+        lastTapRef.current = { time: 0, id: null };
+        return;
+      }
+      lastTapRef.current = { time: now, id: note.id };
+    }
 
     dragRef.current = {
       type,
@@ -178,50 +190,58 @@ export default function ScheduleView({ appData, setAppData }) {
       originalDuration: note.durationMin,
       originalDateKey: dateKey,
       currentDateKey: dateKey,
-      isFloating: false,
-      hasMovedWhileFloating: false
+      isDragMode: type === 'resize'
     };
+
+    setPreviewNote({ ...note });
 
     if (type === 'move') {
       longPressTimer.current = setTimeout(() => {
-        setActiveNoteId(note.id);
-        setShowTray(true);
-        dragRef.current.isFloating = true;
-        
-        setFloatingState({
-          note,
-          x: dragRef.current.currentX,
-          y: dragRef.current.currentY,
-        });
-
-        setPreviewNote(null);
-      }, 500);
+        if (dragRef.current) {
+          dragRef.current.isDragMode = true;
+          setIsDragMode(true);
+          setDragState({ ...dragRef.current });
+          if (navigator.vibrate) navigator.vibrate(50);
+        }
+      }, 300);
+    } else {
+      setIsDragMode(true);
+      setDragState({ ...dragRef.current });
     }
 
-    setDragState(dragRef.current);
-    setPreviewNote({ ...note });
-
-    document.addEventListener('mousemove', handlePointerMove, { passive: false });
-    document.addEventListener('mouseup', handlePointerUp);
+    document.addEventListener('pointermove', handlePointerMove, { passive: false });
+    document.addEventListener('pointerup', handlePointerUp);
+    document.addEventListener('pointercancel', handlePointerUp);
     document.addEventListener('touchmove', handlePointerMove, { passive: false });
     document.addEventListener('touchend', handlePointerUp);
+    document.addEventListener('touchcancel', handlePointerUp);
   };
 
   const handlePointerMove = (e) => {
     if (!dragRef.current) return;
-    if (e.cancelable) e.preventDefault();
     
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
     
+    const deltaX = clientX - dragRef.current.startX;
+    const deltaY = clientY - dragRef.current.startY;
+
+    if (!dragRef.current.isDragMode) {
+      if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+      }
+      return;
+    }
+
+    if (e.cancelable) e.preventDefault();
+    
     dragRef.current.currentX = clientX;
     dragRef.current.currentY = clientY;
 
-    const deltaX = clientX - dragRef.current.startX;
-    const deltaY = clientY - dragRef.current.startY;
-    
-    // エッジスワイプ判定（画面端でホールドすると日付移動）
-    if (dragRef.current.type === 'move' || dragRef.current.isFloating) {
+    if (dragRef.current.type === 'move') {
       const edgeThreshold = 40;
       const screenWidth = window.innerWidth;
       
@@ -247,21 +267,6 @@ export default function ScheduleView({ appData, setAppData }) {
       }
     }
 
-    if (dragRef.current.isFloating) {
-      dragRef.current.hasMovedWhileFloating = true;
-      setFloatingState({
-        note: dragRef.current.note,
-        x: clientX,
-        y: clientY
-      });
-      return;
-    }
-
-    if ((Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15) && longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-
     const deltaMinutes = Math.round(deltaY / PIXELS_PER_MINUTE);
     
     if (dragRef.current.type === 'move') {
@@ -281,18 +286,6 @@ export default function ScheduleView({ appData, setAppData }) {
     }
   };
 
-  const applyNoteUpdate = (id, newStart, newDuration, targetDateKey) => {
-    setAppData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [targetDateKey]: (prev.schedule[targetDateKey] || []).map(n => 
-          n.id === id ? { ...n, startTime: newStart, durationMin: newDuration } : n
-        )
-      }
-    }));
-  };
-
   const handlePointerUp = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -304,48 +297,7 @@ export default function ScheduleView({ appData, setAppData }) {
     }
 
     if (dragRef.current) {
-      const noteElements = document.querySelectorAll('.sticky-note');
-      noteElements.forEach(el => el.style.pointerEvents = 'none');
-      
-      const target = document.elementFromPoint(dragRef.current.currentX, dragRef.current.currentY);
-      const dateTarget = target?.closest('[data-date]');
-      const actionTarget = target?.closest('[data-tray-action]');
-
-      noteElements.forEach(el => el.style.pointerEvents = '');
-
-      if (dragRef.current.isFloating) {
-        if (dateTarget) {
-          handleMoveToDate(dateTarget.getAttribute('data-date'), dragRef.current.currentDateKey);
-        } else if (actionTarget) {
-          handleTrayAction(actionTarget.getAttribute('data-tray-action'));
-        } else {
-          if (!dragRef.current.hasMovedWhileFloating) {
-          } else {
-            setShowTray(false);
-            setActiveNoteId(null);
-          }
-        }
-        setFloatingState(null);
-      } else {
-        if (dragRef.current.type === 'move') {
-          if (dateTarget) {
-            const targetDate = dateTarget.getAttribute('data-date');
-            if (targetDate !== dragRef.current.currentDateKey) {
-              setActiveNoteId(dragRef.current.id); 
-              handleMoveToDate(targetDate, dragRef.current.currentDateKey);
-              
-              setPreviewNote(null);
-              dragRef.current = null;
-              setDragState(null);
-              document.removeEventListener('mousemove', handlePointerMove);
-              document.removeEventListener('mouseup', handlePointerUp);
-              document.removeEventListener('touchmove', handlePointerMove);
-              document.removeEventListener('touchend', handlePointerUp);
-              return;
-            }
-          }
-        }
-
+      if (dragRef.current.isDragMode) {
         let newStart = dragRef.current.originalStartTime;
         let newDuration = dragRef.current.originalDuration;
 
@@ -377,16 +329,19 @@ export default function ScheduleView({ appData, setAppData }) {
             applyNoteUpdate(dragRef.current.id, newStart, newDuration, dragRef.current.currentDateKey);
           }
         }
-        setPreviewNote(null);
       }
-
+      
+      setPreviewNote(null);
+      setIsDragMode(false);
       dragRef.current = null;
       setDragState(null);
       
-      document.removeEventListener('mousemove', handlePointerMove);
-      document.removeEventListener('mouseup', handlePointerUp);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
+      document.removeEventListener('pointercancel', handlePointerUp);
       document.removeEventListener('touchmove', handlePointerMove);
       document.removeEventListener('touchend', handlePointerUp);
+      document.removeEventListener('touchcancel', handlePointerUp);
     }
   };
 
@@ -548,7 +503,7 @@ export default function ScheduleView({ appData, setAppData }) {
         })}
       </div>
 
-      <div style={{ padding: '0 20px 20px', display: 'flex', flex: 1, overflowY: 'auto' }} ref={containerRef}>
+      <div style={{ padding: '20px 20px 80px', display: 'flex', flex: 1, overflowY: 'auto' }} ref={containerRef}>
         <div style={{ width: '50px', flexShrink: 0, borderRight: '1px solid var(--color-border)' }}>
           {hours.map(hour => (
             <div key={hour} style={{ height: '60px', color: 'var(--color-text-sub)', fontSize: '12px', position: 'relative' }}>
@@ -563,12 +518,11 @@ export default function ScheduleView({ appData, setAppData }) {
           ))}
 
           {dailySchedule.filter(n => n.status !== 'completed').map(originalNote => {
-            const isFloating = floatingState && floatingState.note.id === originalNote.id;
             const note = (previewNote && previewNote.id === originalNote.id) ? previewNote : originalNote;
             
             const top = (note.startTime - START_HOUR * 60) * PIXELS_PER_MINUTE;
             const height = note.durationMin * PIXELS_PER_MINUTE;
-            const isDragging = dragState?.id === note.id;
+            const isDragging = dragState?.id === note.id && isDragMode;
             const isActive = activeNoteId === note.id;
             
             return (
@@ -578,13 +532,14 @@ export default function ScheduleView({ appData, setAppData }) {
                 style={{ 
                   position: 'absolute', top: `${top}px`, left: '12px', right: '12px', height: `${height}px`,
                   zIndex: isDragging || isActive ? 100 : 1,
-                  opacity: (showTray && !isActive) || isFloating ? 0.3 : 1,
-                  boxShadow: isDragging && !isFloating ? '0 8px 16px rgba(0,0,0,0.1)' : '2px 2px 5px var(--color-shadow)',
-                  display: 'flex', flexDirection: 'column',
-                  touchAction: 'none'
+                  opacity: (showTray && !isActive) ? 0.3 : (isDragging ? 0.8 : 1),
+                  boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.2)' : '2px 2px 5px var(--color-shadow)',
+                  transform: isDragging ? 'scale(1.02)' : 'none',
+                  transition: isDragging ? 'none' : 'all 0.2s',
+                  display: 'flex', flexDirection: 'column'
                 }}
                 onPointerDown={(e) => handlePointerDown(e, note, 'move')}
-                onContextMenu={(e) => { e.preventDefault(); setActiveNoteId(note.id); setShowTray(true); }}
+                onContextMenu={(e) => { e.preventDefault(); }}
               >
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', padding: '0 8px' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', textAlign: 'center', wordBreak: 'break-word', lineHeight: '1.2' }}>{note.title}</div>
@@ -611,28 +566,7 @@ export default function ScheduleView({ appData, setAppData }) {
         </div>
       </div>
 
-      {floatingState && (
-        <div 
-          className={`sticky-note ${floatingState.note.category}`}
-          style={{
-            position: 'fixed',
-            top: floatingState.y - 30, 
-            left: floatingState.x - 70,
-            width: '140px',
-            height: '60px', 
-            zIndex: 9999,
-            pointerEvents: 'none', 
-            opacity: 0.95,
-            transform: 'scale(1.05) rotate(-2deg)',
-            boxShadow: '0 15px 30px rgba(0,0,0,0.2)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-            padding: '0 8px'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', fontSize: '14px', textAlign: 'center', wordBreak: 'break-word', lineHeight: '1.2' }}>{floatingState.note.title}</div>
-          <div style={{ fontSize: '11px', color: 'var(--color-text-sub)', marginTop: '4px' }}>({floatingState.note.durationMin}分)</div>
-        </div>
-      )}
+
 
       {routineUpdateConfirm && (
         <div style={{ 
