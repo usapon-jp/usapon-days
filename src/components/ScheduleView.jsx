@@ -38,10 +38,25 @@ export default function ScheduleView({ appData, setAppData }) {
   const containerRef = useRef(null);
 
   const handleSaveNote = (noteData) => {
+    let startTime = 12 * 60; // デフォルトは12:00
+    const existingNotes = appData.schedule[dateKey] || [];
+    const maxIterations = 24; // 無限ループ防止
+    let iterations = 0;
+
+    // 同じ時間に既に付箋がある場合は30分ずつずらす
+    while (existingNotes.some(n => n.startTime === startTime && n.status !== 'completed') && iterations < maxIterations) {
+      startTime += 30;
+      // 終了時間を超える場合は開始時間にループ
+      if (startTime + noteData.durationMin > END_HOUR * 60) {
+        startTime = START_HOUR * 60;
+      }
+      iterations++;
+    }
+
     const newNote = {
       id: generateId(),
       ...noteData,
-      startTime: 12 * 60,
+      startTime: startTime,
       status: 'active',
       createdAt: dateKey
     };
