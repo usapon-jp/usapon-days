@@ -225,16 +225,18 @@ export default function ScheduleView({ appData, setAppData }) {
 
     setPreviewNote({ ...note });
 
-    if (type === 'move') {
-      longPressTimer.current = setTimeout(() => {
-        if (dragRef.current) {
-          dragRef.current.isDragMode = true;
-          setIsDragMode(true);
-          setDragState({ ...dragRef.current });
-          if (navigator.vibrate) navigator.vibrate(50);
-        }
-      }, 300);
-    } else {
+    // 長押しタイマー（移動を優先させるため、resize時もセットする）
+    longPressTimer.current = setTimeout(() => {
+      if (dragRef.current) {
+        dragRef.current.type = 'move'; // 長押しされたら移動モードに切り替える
+        dragRef.current.isDragMode = true;
+        setIsDragMode(true);
+        setDragState({ ...dragRef.current });
+        if (navigator.vibrate) navigator.vibrate(50);
+      }
+    }, 400);
+
+    if (type === 'resize') {
       setIsDragMode(true);
       setDragState({ ...dragRef.current });
     }
@@ -255,6 +257,14 @@ export default function ScheduleView({ appData, setAppData }) {
     
     const deltaX = clientX - dragRef.current.startX;
     const deltaY = clientY - dragRef.current.startY;
+
+    // リサイズ中に動いた場合は長押しタイマーを解除
+    if (dragRef.current.isDragMode && dragRef.current.type === 'resize') {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    }
 
     if (!dragRef.current.isDragMode) {
       if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
