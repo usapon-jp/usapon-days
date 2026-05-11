@@ -183,3 +183,15 @@ body {
   animation: slideIn 0.3s ease-out;
 }
 
+@keyframes shake {
+  0% { transform: rotate(0deg) scale(1.02); }
+  25% { transform: rotate(0.5deg) scale(1.02); }
+  50% { transform: rotate(0deg) scale(1.02); }
+  75% { transform: rotate(-0.5deg) scale(1.02); }
+  100% { transform: rotate(0deg) scale(1.02); }
+}
+
+.dragging-shake {
+  animation: shake 0.15s infinite ease-in-out;
+}
+

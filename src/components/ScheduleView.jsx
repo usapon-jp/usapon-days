@@ -220,7 +220,7 @@ export default function ScheduleView({ appData, setAppData }) {
       originalDuration: note.durationMin,
       originalDateKey: dateKey,
       currentDateKey: dateKey,
-      isDragMode: type === 'resize'
+      isDragMode: false
     };
 
     setPreviewNote({ ...note });
@@ -272,6 +272,9 @@ export default function ScheduleView({ appData, setAppData }) {
           clearTimeout(longPressTimer.current);
           longPressTimer.current = null;
         }
+        dragRef.current.isDragMode = true;
+        setIsDragMode(true);
+        setDragState({ ...dragRef.current });
       }
       return;
     }
@@ -628,13 +631,12 @@ export default function ScheduleView({ appData, setAppData }) {
             return (
               <div 
                 key={note.id}
-                className={`sticky-note ${note.category}`}
+                className={`sticky-note ${note.category} ${isDragging ? 'dragging-shake' : ''}`}
                 style={{ 
                   position: 'absolute', top: `${top}px`, left: '12px', right: '12px', height: `${height}px`,
                   zIndex: isDragging || isActive ? 100 : 1,
                   opacity: (showTray && !isActive) ? 0.3 : (isDragging ? 0.8 : 1),
                   boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.2)' : '2px 2px 5px var(--color-shadow)',
-                  transform: isDragging ? 'scale(1.02)' : 'none',
                   transition: isDragging ? 'none' : 'all 0.2s',
                   display: 'flex', flexDirection: 'column',
                   touchAction: 'none',
