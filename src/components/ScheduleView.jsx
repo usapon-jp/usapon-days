@@ -343,6 +343,15 @@ export default function ScheduleView({ appData, setAppData }) {
       newDuration = Math.max(15, newDuration);
       
       setPreviewNote(prev => prev ? { ...prev, durationMin: newDuration } : null);
+    } else if (dragRef.current.type === 'resize-top') {
+      let proposedStart = dragRef.current.originalStartTime + deltaMinutes;
+      proposedStart = Math.round(proposedStart / SNAP_MINUTES) * SNAP_MINUTES;
+      const maxStart = dragRef.current.originalStartTime + dragRef.current.originalDuration - 15;
+      proposedStart = Math.min(proposedStart, maxStart);
+      
+      let newDuration = dragRef.current.originalDuration - (proposedStart - dragRef.current.originalStartTime);
+      
+      setPreviewNote(prev => prev ? { ...prev, startTime: proposedStart, durationMin: newDuration } : null);
     }
   };
 
@@ -374,6 +383,14 @@ export default function ScheduleView({ appData, setAppData }) {
           newDuration = dragRef.current.originalDuration + deltaMinutes;
           newDuration = Math.round(newDuration / SNAP_MINUTES) * SNAP_MINUTES;
           newDuration = Math.max(15, newDuration);
+        } else if (dragRef.current.type === 'resize-top') {
+          let proposedStart = dragRef.current.originalStartTime + deltaMinutes;
+          proposedStart = Math.round(proposedStart / SNAP_MINUTES) * SNAP_MINUTES;
+          const maxStart = dragRef.current.originalStartTime + dragRef.current.originalDuration - 15;
+          proposedStart = Math.min(proposedStart, maxStart);
+          
+          newStart = proposedStart;
+          newDuration = dragRef.current.originalDuration - (proposedStart - dragRef.current.originalStartTime);
         }
         
         if (newStart !== dragRef.current.originalStartTime || newDuration !== dragRef.current.originalDuration || dragRef.current.originalDateKey !== dragRef.current.currentDateKey) {
@@ -719,6 +736,17 @@ export default function ScheduleView({ appData, setAppData }) {
                   </div>
                 </div>
                 
+                <div  
+                  style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: '16px',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    cursor: 'ns-resize', zIndex: 10, touchAction: 'none'
+                  }}
+                  onPointerDown={(e) => handlePointerDown(e, note, 'resize-top')}
+                >
+                  <div style={{ width: '40px', height: '4px', backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: '2px', pointerEvents: 'none' }} />
+                </div>
+
                 <div  
                   style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0, height: '24px',
