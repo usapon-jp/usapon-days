@@ -25,7 +25,11 @@ function App() {
 
   const handleMarkerClick = (source) => {
     setNoteDetailReturnTab(currentTab);
-    setNoteDetailSource(source);
+    setNoteDetailSource({
+      ...source,
+      returnLabel: '週間スケジュールへ戻る',
+      returnToWeekly: true
+    });
     setWeeklySheetState('closed');
   };
 
@@ -38,7 +42,7 @@ function App() {
   const handleBackFromNoteDetail = () => {
     setNoteDetailSource(null);
     setCurrentTab(noteDetailReturnTab);
-    setWeeklySheetState(noteDetailReturnTab === 'today' ? 'closed' : 'half');
+    setWeeklySheetState(noteDetailSource?.returnToWeekly ? 'half' : 'closed');
   };
 
   const handleNavigate = (tab) => {
@@ -74,7 +78,7 @@ function App() {
     }
 
     switch (currentTab) {
-      case 'home': return <HomeView appData={appData} setAppData={setAppData} onNavigate={handleNavigate} />;
+      case 'home': return <HomeView appData={appData} setAppData={setAppData} onNavigate={handleNavigate} onOpenNoteDetail={handleOpenNoteDetail} />;
       case 'calendar': return <CalendarView appData={appData} setAppData={setAppData} onNavigate={handleNavigate} />;
       case 'today': return <ScheduleView appData={appData} setAppData={setAppData} onOpenNoteDetail={handleOpenNoteDetail} />;
       case 'diary': return <DiaryView appData={appData} setAppData={setAppData} />;

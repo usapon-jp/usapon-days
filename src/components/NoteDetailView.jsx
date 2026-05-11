@@ -34,6 +34,7 @@ const buildChecklist = (items) => items
 
 export default function NoteDetailView({ appData, setAppData, source, onBack }) {
   const note = useMemo(() => findNoteBySource(appData, source), [appData, source]);
+  const backLabel = source?.returnLabel || '戻る';
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('todo');
   const [plannedStartAt, setPlannedStartAt] = useState('');
@@ -130,7 +131,7 @@ export default function NoteDetailView({ appData, setAppData, source, onBack }) 
       <div className="note-detail-view">
         <button className="note-detail-back" type="button" onClick={onBack}>
           <ArrowLeft size={22} />
-          <span>週間スケジュールへ戻る</span>
+          <span>{backLabel}</span>
         </button>
         <div className="note-detail-missing">
           <p>付箋が見つかりませんでした</p>
@@ -145,7 +146,7 @@ export default function NoteDetailView({ appData, setAppData, source, onBack }) 
       <header className="note-detail-header">
         <button className="note-detail-back" type="button" onClick={onBack}>
           <ArrowLeft size={22} />
-          <span>週間スケジュールへ戻る</span>
+          <span>{backLabel}</span>
         </button>
         <h1>付箋の詳細</h1>
       </header>

@@ -1,72 +1,180 @@
 import { format } from 'date-fns';
-import { StickyNote, CalendarClock, Trees } from 'lucide-react';
+import { Bell, Check, ChevronRight, ClipboardList, Menu, Sprout } from 'lucide-react';
 
-export default function HomeView({ appData, onNavigate }) {
+const CATEGORY_BUDDIES = {
+  todo: { src: `${import.meta.env.BASE_URL}assets/usa.png`, alt: 'グレーのうさぎ' },
+  routine: { src: `${import.meta.env.BASE_URL}assets/pon.png`, alt: '茶色のうさぎ' },
+  relax: { src: `${import.meta.env.BASE_URL}assets/piyo.png`, alt: 'ひよこ' },
+  wakuwaku: { src: `${import.meta.env.BASE_URL}assets/lemon.png`, alt: 'レモン' }
+};
+
+const CATEGORY_LABELS = {
+  todo: 'TODO',
+  routine: 'ルーティン',
+  relax: 'のんびり',
+  wakuwaku: 'わくわく'
+};
+
+const getStartLabel = (note) => {
+  if (typeof note.startTime === 'number') {
+    const hours = Math.floor(note.startTime / 60);
+    const minutes = note.startTime % 60;
+    return `${hours}:${String(minutes).padStart(2, '0')}`;
+  }
+  if (note.plannedStartAt) {
+    const timePart = note.plannedStartAt.split('T')[1];
+    return timePart ? timePart.slice(0, 5) : '予定';
+  }
+  return '予定';
+};
+
+const getTodayNotes = (appData, todayKey) => {
+  const notes = appData.schedule?.[todayKey] || [];
+  return [...notes].sort((a, b) => (a.startTime ?? 9999) - (b.startTime ?? 9999));
+};
+
+const hasChecklistOrMemo = (note) => {
+  const checklist = Array.isArray(note.checklist) ? note.checklist.filter(item => item.text?.trim()) : [];
+  return checklist.length > 0 || Boolean(note.memo?.trim());
+};
+
+export default function HomeView({ appData, onNavigate, onOpenNoteDetail }) {
   const todayKey = format(new Date(), 'yyyy-MM-dd');
-  const todos = appData.todos || [];
-  const todayNotes = appData.schedule?.[todayKey] || [];
-  const activeTodos = todos.filter(note => note.status !== 'paused');
-  const pausedTodos = todos.filter(note => note.status === 'paused');
+  const todayNotes = getTodayNotes(appData, todayKey);
+  const schedulePreview = todayNotes.slice(0, 4);
+  const listNotes = todayNotes.filter(hasChecklistOrMemo).slice(0, 6);
+
+  const openScheduleDetail = (note) => {
+    onOpenNoteDetail?.({
+      sourceType: 'schedule',
+      sourceDateKey: todayKey,
+      id: note.id,
+      returnLabel: 'ホームへ戻る'
+    }, 'home');
+  };
 
   return (
     <div className="home-view">
-      <header className="app-header" style={{ padding: '8px 20px' }}>
-        <h1 className="app-title">
-          <span style={{ fontSize: '28px' }}>🐥</span> うさぽんDAYS
-        </h1>
+      <header className="home-topbar">
+        <button className="home-icon-button" type="button" aria-label="メニュー">
+          <Menu size={22} />
+        </button>
+        <h1>うさぽんデイズ</h1>
+        <button className="home-icon-button" type="button" aria-label="お知らせ">
+          <Bell size={21} />
+        </button>
       </header>
 
-      <section className="home-summary">
+      <section className="home-greeting" aria-label="今日のあいさつ">
+        <img src={`${import.meta.env.BASE_URL}assets/piyo.png`} alt="ピヨ" />
         <div>
-          <p className="home-kicker">今日のようす</p>
-          <h2>ゆっくり貼って、できたら動かす</h2>
-        </div>
-        <div className="home-stats" aria-label="付箋の数">
-          <span><strong>{todayNotes.length}</strong>今日</span>
-          <span><strong>{activeTodos.length}</strong>付箋</span>
-          <span><strong>{pausedTodos.length}</strong>休み</span>
+          <p>おはよう！</p>
+          <span>今日もいっしょに<br />すてきな1日をつくろう〜</span>
         </div>
       </section>
 
-      <nav className="home-menu" aria-label="ホームメニュー">
-        <HomeMenuCard
-          icon={<StickyNote size={30} color="#D4B01A" />}
-          title="ふせん"
-          description="TODOとひとやすみ中の付箋"
-          color="var(--color-todo)"
-          onClick={() => onNavigate('todo')}
-        />
+      <HomeSection
+        icon={<ClipboardList size={16} />}
+        title="きょうのスケジュール"
+        actionLabel="すべて見る"
+        onAction={() => onNavigate('today')}
+      >
+        {schedulePreview.length > 0 ? (
+          <div className="home-schedule-list">
+            {schedulePreview.map(note => (
+              <button
+                key={note.id}
+                type="button"
+                className={`home-schedule-row ${note.status === 'completed' ? 'is-completed' : ''}`}
+                onClick={() => openScheduleDetail(note)}
+              >
+                <span className="home-schedule-check">
+                  {note.status === 'completed' && <Check size={12} />}
+                </span>
+                <span className="home-schedule-title">{note.title}</span>
+                <small>{getStartLabel(note)}</small>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="home-empty">きょうの予定はまだありません</p>
+        )}
+      </HomeSection>
 
-        <HomeMenuCard
-          icon={<CalendarClock size={30} color="#5B9E77" />}
-          title="スケジュール"
-          description="今日の予定を組み立てる"
-          color="var(--color-routine)"
-          onClick={() => onNavigate('today')}
-        />
+      <HomeSection
+        icon={<ClipboardList size={16} />}
+        title="やることリスト"
+        actionLabel="すべて見る"
+        onAction={() => onNavigate('today')}
+      >
+        {listNotes.length > 0 ? (
+          <div className="home-note-strip" aria-label="やることリスト付きの付箋">
+            {listNotes.map(note => (
+              <ChecklistNoteCard key={note.id} note={note} onClick={() => openScheduleDetail(note)} />
+            ))}
+          </div>
+        ) : (
+          <p className="home-empty">やることリスト付きの付箋はまだありません</p>
+        )}
+      </HomeSection>
 
-        <HomeMenuCard
-          icon={<Trees size={30} color="#6296C2" />}
-          title="日記を書く"
-          description="今日の景色と記録"
-          color="var(--color-relax)"
-          onClick={() => onNavigate('diary')}
-        />
-      </nav>
+      <HomeSection
+        icon={<Sprout size={16} />}
+        title="うさぽんの小さな箱庭"
+        actionLabel="編集する"
+        onAction={() => onNavigate('settings')}
+      >
+        <button className="home-garden" type="button" onClick={() => onNavigate('settings')}>
+          <img src={`${import.meta.env.BASE_URL}assets/home-garden-reference.jpg`} alt="うさぽんの小さな箱庭" />
+          <span>coming soon</span>
+        </button>
+      </HomeSection>
     </div>
   );
 }
 
-function HomeMenuCard({ icon, title, description, color, onClick }) {
+function HomeSection({ icon, title, actionLabel, onAction, children }) {
   return (
-    <button className="home-menu-card" onClick={onClick}>
-      <span className="home-menu-icon" style={{ backgroundColor: color }}>
-        {icon}
+    <section className="home-section">
+      <div className="home-section-header">
+        <h2>
+          <span>{icon}</span>
+          {title}
+        </h2>
+        <button type="button" onClick={onAction}>
+          {actionLabel}
+          <ChevronRight size={14} />
+        </button>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ChecklistNoteCard({ note, onClick }) {
+  const checklist = Array.isArray(note.checklist) ? note.checklist.filter(item => item.text?.trim()) : [];
+  const buddy = CATEGORY_BUDDIES[note.category] || CATEGORY_BUDDIES.todo;
+  const categoryLabel = CATEGORY_LABELS[note.category] || CATEGORY_LABELS.todo;
+  const previewItems = checklist.slice(0, 3);
+
+  return (
+    <button type="button" className={`home-check-note sticky-note ${note.category || 'todo'}`} onClick={onClick}>
+      <span className="home-check-note-label">{categoryLabel}</span>
+      <strong>{note.title}</strong>
+      <span className="home-check-note-lines">
+        {previewItems.length > 0 ? previewItems.map(item => (
+          <span key={item.id} className={item.done ? 'is-done' : ''}>
+            <i aria-hidden="true" />
+            {item.text}
+          </span>
+        )) : (
+          <span>
+            <i aria-hidden="true" />
+            メモあり
+          </span>
+        )}
       </span>
-      <span>
-        <strong>{title}</strong>
-        <small>{description}</small>
-      </span>
+      <img src={buddy.src} alt={buddy.alt} />
     </button>
   );
 }
