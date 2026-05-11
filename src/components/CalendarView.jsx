@@ -53,9 +53,9 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
       </div>
 
       {/* Calendar Card */}
-      <div style={{ padding: '0 20px' }}>
-        <div className="card" style={{ padding: '20px', borderRadius: '20px', margin: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ padding: '0 16px' }}>
+        <div className="card" style={{ padding: '12px', borderRadius: '20px', margin: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <button onClick={handlePrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
               <ChevronLeft size={24} color="#4A4A4A" />
             </button>
@@ -67,7 +67,7 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
             {weekdays.map((day, i) => (
               <div key={day} style={{ 
                 fontSize: '12px', 
@@ -79,7 +79,7 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', rowGap: '16px', textAlign: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', rowGap: '4px', textAlign: 'center' }}>
             {calendarDays.map((day, i) => {
               const isSelected = isSameDay(day, selectedDay);
               const isCurrentMonth = isSameMonth(day, monthStart);
@@ -103,7 +103,7 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
                     color: isSelected ? '#4A4A4A' : color,
                     fontWeight: isSelected ? 'bold' : 'normal',
                     cursor: 'pointer',
-                    fontSize: '16px'
+                    fontSize: '14px'
                   }}
                 >
                   {format(day, dateFormat)}
