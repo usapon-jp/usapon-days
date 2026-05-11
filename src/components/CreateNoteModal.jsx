@@ -21,6 +21,7 @@ export default function CreateNoteModal({ appData, onClose, onSave }) {
 
   const favorites = appData?.favorites || [];
   const history = appData?.history || [];
+  const filteredFavorites = favorites.filter(fav => fav.category === category);
 
   const handleSelectTemplate = (tpl) => {
     setTitle(tpl.title);
@@ -77,16 +78,16 @@ export default function CreateNoteModal({ appData, onClose, onSave }) {
         <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '24px' }}>付箋をつくる</h3>
 
         {/* お気に入りと履歴チップ */}
-        {(favorites.length > 0 || history.length > 0) && (
+        {(filteredFavorites.length > 0 || history.length > 0) && (
           <div style={{ marginBottom: '24px' }}>
-            {favorites.length > 0 && (
+            {filteredFavorites.length > 0 && (
               <div style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                   <Star size={14} fill="#FFD700" color="#FFD700" />
                   <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-sub)' }}>お気に入り</span>
                 </div>
                 <div className="hide-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-                  {favorites.map((fav, i) => (
+                  {filteredFavorites.map((fav, i) => (
                     <button 
                       key={i} onClick={() => handleSelectTemplate(fav)}
                       style={{ flexShrink: 0, padding: '6px 12px', borderRadius: '16px', border: '1px solid var(--color-border)', backgroundColor: '#fff', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
