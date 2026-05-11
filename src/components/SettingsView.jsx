@@ -4,6 +4,7 @@ export default function SettingsView({ appData, setAppData }) {
   const startHour = appData.settings?.startHour ?? 6;
   const endHour = appData.settings?.endHour ?? 24;
   const isPremium = appData.settings?.isPremium || false;
+  const showLandscape = appData.settings?.showLandscape ?? false;
 
   const [secretWord, setSecretWord] = useState('');
 
@@ -12,7 +13,7 @@ export default function SettingsView({ appData, setAppData }) {
       ...prev,
       settings: {
         ...(prev.settings || { startHour: 6, endHour: 24 }),
-        [key]: typeof value === 'string' && key !== 'startHour' && key !== 'endHour' ? value : parseInt(value, 10)
+        [key]: (key === 'startHour' || key === 'endHour') ? parseInt(value, 10) : value
       }
     }));
   };
@@ -77,6 +78,30 @@ export default function SettingsView({ appData, setAppData }) {
         </div>
         <p style={{ fontSize: '12px', color: 'var(--color-text-sub)', marginTop: '16px', lineHeight: '1.4' }}>
           ※同じ時間帯に付箋が重なった場合の表示方法を設定します。
+        </p>
+      </div>
+
+      <div className="card" style={{ marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px' }}>おつかれさま風景の表示</h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '14px', color: 'var(--color-text-main)' }}>「おつかれさま風景」を表示する</span>
+          <div 
+            onClick={() => updateSettings('showLandscape', !showLandscape)}
+            style={{
+              width: '50px', height: '26px', borderRadius: '13px',
+              backgroundColor: showLandscape ? '#5B9E77' : '#D1D1D1',
+              position: 'relative', cursor: 'pointer', transition: 'background-color 0.2s'
+            }}
+          >
+            <div style={{
+              width: '22px', height: '22px', borderRadius: '11px', backgroundColor: '#fff',
+              position: 'absolute', top: '2px', left: showLandscape ? '26px' : '2px',
+              transition: 'left 0.2s'
+            }} />
+          </div>
+        </div>
+        <p style={{ fontSize: '12px', color: 'var(--color-text-sub)', marginTop: '16px', lineHeight: '1.4' }}>
+          ※日記画面の「今日のおつかれさま風景」セクションを表示するかどうかを設定します。
         </p>
       </div>
 
