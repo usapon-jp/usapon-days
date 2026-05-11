@@ -638,7 +638,7 @@ export default function ScheduleView({ appData, setAppData }) {
               activeNotes.push(previewNote);
             }
             
-            const notesWithLayout = activeNotes.map(n => ({ ...n, left: '12px', width: 'calc(100% - 24px)' }));
+            const notesWithLayout = activeNotes.map(n => ({ ...n, left: '12px', width: 'calc(100% - 24px)', topOffset: 0 }));
             
             if (appData.overlapBehavior === 'coexist' || !appData.overlapBehavior) {
               for (let i = 0; i < notesWithLayout.length; i++) {
@@ -654,10 +654,28 @@ export default function ScheduleView({ appData, setAppData }) {
                   }
                 }
               }
+            } else if (appData.overlapBehavior === 'swap' && previewNote && dragRef.current?.currentDateKey === dateKey) {
+              const pStart = previewNote.startTime;
+              const pEnd = pStart + previewNote.durationMin;
+              const originalStart = dragRef.current.originalStartTime;
+              
+              for (let i = 0; i < notesWithLayout.length; i++) {
+                const n = notesWithLayout[i];
+                if (n.id === previewNote.id) continue;
+                
+                const nStart = n.startTime;
+                const nEnd = nStart + n.durationMin;
+                
+                const overlap = (pStart >= nStart && pStart < nEnd) || (pEnd > nStart && pEnd <= nEnd) || (pStart <= nStart && pEnd >= nEnd);
+                
+                if (overlap) {
+                  n.topOffset = originalStart - n.startTime;
+                }
+              }
             }
             return notesWithLayout;
           })().map(note => {
-            const top = (note.startTime - START_HOUR * 60) * PIXELS_PER_MINUTE;
+            const top = (note.startTime + (note.topOffset || 0) - START_HOUR * 60) * PIXELS_PER_MINUTE;
             const height = note.durationMin * PIXELS_PER_MINUTE;
             const isDragging = dragState?.id === note.id && isDragMode;
             const isActive = activeNoteId === note.id;
