@@ -25,6 +25,7 @@ export default function ScheduleView({ appData, setAppData }) {
   const [moveTargetDate, setMoveTargetDate] = useState('');
 
   const [routineUpdateConfirm, setRoutineUpdateConfirm] = useState(null);
+  const [routineDeleteConfirm, setRoutineDeleteConfirm] = useState(null);
 
   // Dragging states
   const dragRef = useRef(null);
@@ -409,6 +410,52 @@ export default function ScheduleView({ appData, setAppData }) {
     setRoutineUpdateConfirm(null);
   };
 
+  const handleConfirmRoutineDelete = (deleteType) => {
+    const { noteId, originalRoutineId } = routineDeleteConfirm;
+    
+    setAppData(prev => {
+      const nextState = { ...prev };
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      
+      const getStartOfWeek = (date) => {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day; 
+        return new Date(d.setDate(diff));
+      };
+      
+      const startOfThisWeek = format(getStartOfWeek(new Date()), 'yyyy-MM-dd');
+
+      if (deleteType === 'all') {
+        nextState.routines = (nextState.routines || []).filter(r => r.id !== originalRoutineId);
+        const allDates = Object.keys(nextState.schedule);
+        for (const dKey of allDates) {
+          nextState.schedule[dKey] = nextState.schedule[dKey].filter(n => n.originalRoutineId !== originalRoutineId && n.id !== noteId);
+        }
+      } else if (deleteType === 'today_onwards') {
+        nextState.routines = (nextState.routines || []).filter(r => r.id !== originalRoutineId);
+        const allDates = Object.keys(nextState.schedule);
+        for (const dKey of allDates) {
+          if (dKey >= todayStr) {
+            nextState.schedule[dKey] = nextState.schedule[dKey].filter(n => n.originalRoutineId !== originalRoutineId && n.id !== noteId);
+          }
+        }
+      } else if (deleteType === 'this_week_onwards') {
+        nextState.routines = (nextState.routines || []).filter(r => r.id !== originalRoutineId);
+        const allDates = Object.keys(nextState.schedule);
+        for (const dKey of allDates) {
+          if (dKey >= startOfThisWeek) {
+            nextState.schedule[dKey] = nextState.schedule[dKey].filter(n => n.originalRoutineId !== originalRoutineId && n.id !== noteId);
+          }
+        }
+      }
+      
+      return nextState;
+    });
+    
+    setRoutineDeleteConfirm(null);
+  };
+
   const handleMoveToDate = (targetDateString, sourceDateKey) => {
     const srcKey = sourceDateKey || dateKey;
     const noteIdToMove = activeNoteId || dragRef.current?.id;
@@ -468,7 +515,14 @@ export default function ScheduleView({ appData, setAppData }) {
       }));
       setActiveNoteId(null);
     } else if (action === 'やめる') {
-      removeNote(note.id);
+      if (note.originalRoutineId) {
+        setRoutineDeleteConfirm({
+          noteId: note.id,
+          originalRoutineId: note.originalRoutineId
+        });
+      } else {
+        removeNote(note.id);
+      }
       setActiveNoteId(null);
     }
 
@@ -641,6 +695,47 @@ export default function ScheduleView({ appData, setAppData }) {
                 style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border-dark)', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 今日だけ変更する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {routineDeleteConfirm && (
+        <div style={{ 
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '360px', margin: 0 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px' }}>ルーティンを削除</h3>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-main)', marginBottom: '24px', lineHeight: '1.5' }}>
+              このルーティンをどのように削除しますか？
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                onClick={() => handleConfirmRoutineDelete('today_onwards')}
+                style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#FF4D4F', color: '#fff', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                今日以降を削除
+              </button>
+              <button 
+                onClick={() => handleConfirmRoutineDelete('this_week_onwards')}
+                style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#FF4D4F', color: '#fff', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                今週以降を削除
+              </button>
+              <button 
+                onClick={() => handleConfirmRoutineDelete('all')}
+                style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#FF4D4F', color: '#fff', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                全て削除
+              </button>
+              <button 
+                onClick={() => setRoutineDeleteConfirm(null)}
+                style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border-dark)', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                キャンセル
               </button>
             </div>
           </div>
