@@ -275,8 +275,9 @@ export default function ScheduleView({ appData, setAppData }) {
         dragRef.current.isDragMode = true;
         setIsDragMode(true);
         setDragState({ ...dragRef.current });
+      } else {
+        return; // 10px以上動いていない場合は何もしない
       }
-      return;
     }
 
     if (e.cancelable) e.preventDefault();
