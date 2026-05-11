@@ -19,6 +19,9 @@ export default function DiaryView({ appData, setAppData }) {
   const completedNotes = dailySchedule.filter(n => n.status === 'completed');
   
   const fileInputRef = useRef(null);
+  const [changingPhotoIndex, setChangingPhotoIndex] = useState(null);
+  const [activeMenuIndex, setActiveMenuIndex] = useState(null);
+  const longPressTimerRef = useRef(null);
 
   const handleTextChange = (e) => {
     setAppData(prev => ({
@@ -35,17 +38,67 @@ export default function DiaryView({ appData, setAppData }) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const newPhotos = [...photos, { url: reader.result, comment: '' }];
-        setAppData(prev => ({
-          ...prev,
-          records: {
-            ...(prev.records || {}),
-            [dateKey]: { ...todayRecord, photos: newPhotos }
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
           }
-        }));
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // 圧縮してJPEG（品質0.7）として保存
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+          let newPhotos;
+          if (changingPhotoIndex !== null) {
+            newPhotos = [...photos];
+            newPhotos[changingPhotoIndex] = { ...newPhotos[changingPhotoIndex], url: compressedDataUrl };
+            setChangingPhotoIndex(null);
+          } else {
+            newPhotos = [...photos, { url: compressedDataUrl, comment: '' }];
+          }
+
+          setAppData(prev => ({
+            ...prev,
+            records: {
+              ...(prev.records || {}),
+              [dateKey]: { ...todayRecord, photos: newPhotos }
+            }
+          }));
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleDeletePhoto = (index) => {
+    const newPhotos = photos.filter((_, idx) => idx !== index);
+    setAppData(prev => ({
+      ...prev,
+      records: {
+        ...(prev.records || {}),
+        [dateKey]: { ...todayRecord, photos: newPhotos }
+      }
+    }));
+    setActiveMenuIndex(null);
   };
 
   const handlePhotoCommentChange = (index, comment) => {
@@ -226,7 +279,26 @@ export default function DiaryView({ appData, setAppData }) {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
             {photos.map((photoItem, idx) => (
-              <div key={idx} style={{ width: '100%', maxWidth: '300px', backgroundColor: '#fff', padding: '12px 12px 16px 12px', borderRadius: '4px', boxShadow: '0 8px 20px rgba(0,0,0,0.12)', transform: idx % 2 === 0 ? 'rotate(-2deg)' : 'rotate(2deg)' }}>
+              <div 
+                key={idx} 
+                style={{ 
+                  width: '100%', maxWidth: '300px', backgroundColor: '#fff', padding: '12px 12px 16px 12px', 
+                  borderRadius: '4px', boxShadow: '0 8px 20px rgba(0,0,0,0.12)', 
+                  transform: idx % 2 === 0 ? 'rotate(-2deg)' : 'rotate(2deg)',
+                  position: 'relative'
+                }}
+                onTouchStart={() => {
+                  longPressTimerRef.current = setTimeout(() => {
+                    setActiveMenuIndex(idx);
+                  }, 500);
+                }}
+                onTouchEnd={() => clearTimeout(longPressTimerRef.current)}
+                onTouchMove={() => clearTimeout(longPressTimerRef.current)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setActiveMenuIndex(idx);
+                }}
+              >
                 <div style={{ width: '100%', aspectRatio: '1/1', backgroundColor: '#F0F0F0', overflow: 'hidden', marginBottom: '12px' }}>
                   <img src={photoItem.url} alt="思い出" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
@@ -238,6 +310,38 @@ export default function DiaryView({ appData, setAppData }) {
                     placeholder="写真のコメントを記入..."
                     style={{ width: '100%', padding: '8px', border: 'none', borderBottom: '1px dashed #ccc', outline: 'none', fontSize: '13px', textAlign: 'center', backgroundColor: 'transparent' }}
                   />
+                )}
+                
+                {activeMenuIndex === idx && (
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(255,255,255,0.9)', display: 'flex', flexDirection: 'column',
+                    justifyContent: 'center', alignItems: 'center', gap: '12px', borderRadius: '4px',
+                    zIndex: 10
+                  }}>
+                    <button 
+                      onClick={() => {
+                        setChangingPhotoIndex(idx);
+                        fileInputRef.current.click();
+                        setActiveMenuIndex(null);
+                      }}
+                      style={{ width: '120px', padding: '10px', borderRadius: '20px', border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
+                    >
+                      写真を変更
+                    </button>
+                    <button 
+                      onClick={() => handleDeletePhoto(idx)}
+                      style={{ width: '120px', padding: '10px', borderRadius: '20px', border: 'none', backgroundColor: '#FF4D4F', color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
+                    >
+                      写真を削除
+                    </button>
+                    <button 
+                      onClick={() => setActiveMenuIndex(null)}
+                      style={{ width: '120px', padding: '10px', borderRadius: '20px', border: 'none', backgroundColor: '#f0f0f0', color: '#333', cursor: 'pointer', fontSize: '14px' }}
+                    >
+                      キャンセル
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
