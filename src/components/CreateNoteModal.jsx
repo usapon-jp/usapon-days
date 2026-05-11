@@ -5,6 +5,7 @@ const CATEGORIES = [
   { id: 'todo', label: 'TODO', color: 'var(--color-todo)', textColor: '#D4B01A' },
   { id: 'routine', label: 'ルーティン', color: 'var(--color-routine)', textColor: '#5B9E77' },
   { id: 'relax', label: 'のんびり', color: 'var(--color-relax)', textColor: '#6296C2' },
+  { id: 'wakuwaku', label: 'わくわく', color: 'var(--color-wakuwaku)', textColor: '#E57373' },
 ];
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];

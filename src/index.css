@@ -9,6 +9,7 @@
   --color-todo: #FFF8C9; /* 淡いレモンイエロー/クリーム */
   --color-routine: #E2F3E8; /* 淡いミント */
   --color-relax: #E1F0FC; /* 淡い水色 */
+  --color-wakuwaku: #FFE4E6; /* 淡いピンク */
   
   --color-border: #F2F2F2;
   --color-border-dark: #E5E5E5;
@@ -159,6 +160,9 @@ body {
 .sticky-note.relax { 
   background-color: var(--color-relax); 
   background-image: url('/assets/fusen3.png'); 
+}
+.sticky-note.wakuwaku { 
+  background-color: var(--color-wakuwaku); 
 }
 
 /* Scrollbar Hiding Utility */
