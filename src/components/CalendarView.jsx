@@ -33,7 +33,7 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
   const sortedSchedule = [...dailySchedule].sort((a, b) => a.startTime - b.startTime);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#FAF7F2', overflowY: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#FAF7F2' }}>
       {/* Top Banner */}
       <div style={{ 
         backgroundColor: '#C5F0E3', 
@@ -97,7 +97,7 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
                   onClick={() => setSelectedDay(day)}
                   style={{ 
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    height: '36px', 
+                    aspectRatio: '1',
                     borderRadius: '8px',
                     backgroundColor: isSelected ? '#FDE38A' : 'transparent',
                     color: isSelected ? '#4A4A4A' : color,
@@ -115,13 +115,12 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
       </div>
 
       {/* Today's Schedule */}
-      <div style={{ padding: '24px 20px', flex: 1 }}>
+      <div style={{ padding: '24px 20px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
           <img src="./assets/lemon.png" style={{ width: '20px', transform: 'rotate(-20deg)' }} alt="icon" />
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#4A4A4A' }}>きょうの予定</h3>
         </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
           {sortedSchedule.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#A0A0A0', fontSize: '14px', padding: '20px' }}>予定はありません</p>
           ) : (
