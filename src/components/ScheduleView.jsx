@@ -171,9 +171,25 @@ export default function ScheduleView({ appData, setAppData }) {
       const updatedNote = { ...note, startTime: newStartTime, durationMin: newDurationMin };
 
       if (sourceDateKey === targetDateKey) {
-        nextState.schedule[targetDateKey] = nextState.schedule[targetDateKey].map(n => 
-          n.id === noteId ? updatedNote : n
+        const dayNotes = nextState.schedule[targetDateKey] || [];
+        const overlappingNote = dayNotes.find(n => 
+          n.id !== noteId && n.status !== 'completed' &&
+          ((newStartTime >= n.startTime && newStartTime < n.startTime + n.durationMin) ||
+           (newStartTime + newDurationMin > n.startTime && newStartTime + newDurationMin <= n.startTime + n.durationMin))
         );
+
+        if (overlappingNote && prev.overlapBehavior === 'swap') {
+          const tempStartTime = overlappingNote.startTime;
+          nextState.schedule[targetDateKey] = dayNotes.map(n => {
+            if (n.id === noteId) return { ...n, startTime: tempStartTime, durationMin: newDurationMin };
+            if (n.id === overlappingNote.id) return { ...n, startTime: dragRef.current.originalStartTime };
+            return n;
+          });
+        } else {
+          nextState.schedule[targetDateKey] = dayNotes.map(n => 
+            n.id === noteId ? updatedNote : n
+          );
+        }
       } else {
         nextState.schedule[sourceDateKey] = nextState.schedule[sourceDateKey].filter(n => n.id !== noteId);
         nextState.schedule[targetDateKey] = [...(nextState.schedule[targetDateKey] || []), updatedNote];
@@ -564,6 +580,17 @@ export default function ScheduleView({ appData, setAppData }) {
               {formattedDateString}
             </h2>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-sub)' }}>重なり:</span>
+            <select 
+              value={appData.overlapBehavior || 'coexist'}
+              onChange={(e) => setAppData(prev => ({ ...prev, overlapBehavior: e.target.value }))}
+              style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '8px', border: '1px solid var(--color-border-dark)', backgroundColor: '#fff', cursor: 'pointer' }}
+            >
+              <option value="coexist">共存</option>
+              <option value="swap">入替</option>
+            </select>
+          </div>
         </div>
 
         <div 
@@ -621,7 +648,25 @@ export default function ScheduleView({ appData, setAppData }) {
             if (previewNote && dragRef.current?.currentDateKey === dateKey) {
               activeNotes.push(previewNote);
             }
-            return activeNotes;
+            
+            const notesWithLayout = activeNotes.map(n => ({ ...n, left: '12px', width: 'calc(100% - 24px)' }));
+            
+            if (appData.overlapBehavior === 'coexist' || !appData.overlapBehavior) {
+              for (let i = 0; i < notesWithLayout.length; i++) {
+                for (let j = i + 1; j < notesWithLayout.length; j++) {
+                  const n1 = notesWithLayout[i];
+                  const n2 = notesWithLayout[j];
+                  const overlap = (n1.startTime >= n2.startTime && n1.startTime < n2.startTime + n2.durationMin) ||
+                                  (n2.startTime >= n1.startTime && n2.startTime < n1.startTime + n1.durationMin);
+                  if (overlap) {
+                    n1.width = 'calc(50% - 14px)';
+                    n2.width = 'calc(50% - 14px)';
+                    n2.left = 'calc(50% + 2px)';
+                  }
+                }
+              }
+            }
+            return notesWithLayout;
           })().map(note => {
             const top = (note.startTime - START_HOUR * 60) * PIXELS_PER_MINUTE;
             const height = note.durationMin * PIXELS_PER_MINUTE;
@@ -634,7 +679,7 @@ export default function ScheduleView({ appData, setAppData }) {
                 key={note.id}
                 className={`sticky-note ${note.category} ${isDragging ? 'dragging-shake' : ''}`}
                 style={{ 
-                  position: 'absolute', top: `${top}px`, left: '12px', right: '12px', height: `${height}px`,
+                  position: 'absolute', top: `${top}px`, left: note.left, width: note.width, height: `${height}px`,
                   zIndex: isDragging || isActive ? 100 : 1,
                   opacity: (showTray && !isActive) ? 0.3 : (isDragging ? 0.8 : 1),
                   boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.2)' : '2px 2px 5px var(--color-shadow)',
