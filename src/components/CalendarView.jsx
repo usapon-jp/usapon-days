@@ -142,8 +142,27 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
                   display: 'flex', 
                   alignItems: 'center',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  position: 'relative',
+                  opacity: note.status === 'completed' ? 0.7 : 1
                 }}>
+                  {note.status === 'completed' && (
+                    <div style={{
+                      position: 'absolute',
+                      right: '40px',
+                      border: '2px solid #5B9E77',
+                      color: '#5B9E77',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      transform: 'rotate(-10deg)',
+                      backgroundColor: '#fff',
+                      zIndex: 1
+                    }}>
+                      完了
+                    </div>
+                  )}
                   <div style={{ 
                     backgroundColor: timeBgColor, 
                     padding: '6px 12px', 
