@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
-import { ArrowLeft, Plus, ChevronRight, Play, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, ChevronRight } from 'lucide-react';
 import CreateNoteModal from './CreateNoteModal';
+import NoteCard from './NoteCard';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -117,12 +118,9 @@ export default function TodoListView({ appData, setAppData, onNavigate }) {
   );
 
   const renderList = () => {
-    let filtered = [];
-    if (currentView === 'paused') {
-      filtered = todos.filter(t => t.status === 'paused');
-    } else {
-      filtered = todos.filter(t => t.category === currentView && t.status !== 'paused');
-    }
+    const filtered = currentView === 'paused'
+      ? todos.filter(t => t.status === 'paused')
+      : todos.filter(t => t.category === currentView && t.status !== 'paused');
 
     return (
       <div>
@@ -142,27 +140,12 @@ export default function TodoListView({ appData, setAppData, onNavigate }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {filtered.map(note => (
-              <div key={note.id} className={`card ${note.category}`} style={{ margin: 0, padding: '16px', borderLeft: `6px solid var(--color-${note.category})`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{note.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-sub)', marginTop: '4px' }}>目安: {note.durationMin}分</div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    onClick={() => handleMoveToToday(note)} 
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid var(--color-border)', backgroundColor: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
-                    title="今日のスケジュールに追加"
-                  >
-                    <Play size={18} color="var(--color-primary)" />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(note.id)} 
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid var(--color-border)', backgroundColor: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
-                  >
-                    <Trash2 size={18} color="#A0A0A0" />
-                  </button>
-                </div>
-              </div>
+              <NoteCard
+                key={note.id}
+                note={note}
+                onMoveToToday={handleMoveToToday}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}
@@ -210,6 +193,7 @@ export default function TodoListView({ appData, setAppData, onNavigate }) {
 
       {isModalOpen && (
         <CreateNoteModal 
+          appData={appData}
           onClose={() => setIsModalOpen(false)} 
           onSave={handleSaveNote} 
           initialCategory={prefilledCategory}

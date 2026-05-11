@@ -3,6 +3,7 @@ const STORAGE_KEY = 'usapondays_data';
 const defaultData = {
   todos: [], // ひとやすみ中、または未配置のTODO
   schedule: {}, // { 'YYYY-MM-DD': [ { id, title, category, durationMin, startTime, status } ] }
+  routines: [],
   records: {}, // 日記や記録
   points: 0,
   settings: {
@@ -11,15 +12,54 @@ const defaultData = {
   }
 };
 
+export const defaultNoteDetails = {
+  memo: '',
+  checklist: [],
+  tags: [],
+  dueDate: null,
+  plannedStartAt: null,
+  alarmAt: null
+};
+
+export const normalizeNote = (note = {}) => ({
+  ...defaultNoteDetails,
+  ...note,
+  memo: typeof note.memo === 'string' ? note.memo : '',
+  checklist: Array.isArray(note.checklist) ? note.checklist : [],
+  tags: Array.isArray(note.tags) ? note.tags : [],
+  dueDate: note.dueDate || null,
+  plannedStartAt: note.plannedStartAt || null,
+  alarmAt: note.alarmAt || null
+});
+
+const normalizeSchedule = (schedule = {}) => Object.fromEntries(
+  Object.entries(schedule).map(([date, notes]) => [
+    date,
+    Array.isArray(notes) ? notes.map(normalizeNote) : []
+  ])
+);
+
+const normalizeAppData = (data = {}) => ({
+  ...defaultData,
+  ...data,
+  todos: Array.isArray(data.todos) ? data.todos.map(normalizeNote) : [],
+  schedule: normalizeSchedule(data.schedule),
+  routines: Array.isArray(data.routines) ? data.routines.map(normalizeNote) : [],
+  settings: {
+    ...defaultData.settings,
+    ...(data.settings || {})
+  }
+});
+
 export const loadAppData = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultData;
+    if (!raw) return normalizeAppData(defaultData);
     const parsed = JSON.parse(raw);
-    return { ...defaultData, ...parsed };
+    return normalizeAppData(parsed);
   } catch (err) {
     console.error('Failed to load app data', err);
-    return defaultData;
+    return normalizeAppData(defaultData);
   }
 };
 
@@ -39,7 +79,7 @@ export const exportAppData = () => {
 export const importAppData = (jsonString) => {
   try {
     const parsed = JSON.parse(jsonString);
-    saveAppData(parsed);
+    saveAppData(normalizeAppData(parsed));
     return true;
   } catch (err) {
     console.error('Failed to import app data', err);
