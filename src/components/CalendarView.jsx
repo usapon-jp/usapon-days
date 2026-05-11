@@ -120,7 +120,7 @@ export default function CalendarView({ appData, setAppData, onNavigate }) {
           <img src="./assets/lemon.png" style={{ width: '20px', transform: 'rotate(-20deg)' }} alt="icon" />
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#4A4A4A' }}>きょうの予定</h3>
         </div>
-        <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto' }}>
+        <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', height: '240px' }}>
           {sortedSchedule.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#A0A0A0', fontSize: '14px', padding: '20px' }}>予定はありません</p>
           ) : (
