@@ -64,6 +64,23 @@ export default function SettingsView({ appData, setAppData }) {
       </div>
 
       <div className="card" style={{ marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px' }}>付箋の重なり時の挙動</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <select 
+            value={appData.overlapBehavior || 'coexist'}
+            onChange={(e) => setAppData(prev => ({ ...prev, overlapBehavior: e.target.value }))}
+            style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: '#fff', fontSize: '16px' }}
+          >
+            <option value="coexist">共存（Googleカレンダー風）</option>
+            <option value="swap">入替（場所を入れ替える）</option>
+          </select>
+        </div>
+        <p style={{ fontSize: '12px', color: 'var(--color-text-sub)', marginTop: '16px', lineHeight: '1.4' }}>
+          ※同じ時間帯に付箋が重なった場合の表示方法を設定します。
+        </p>
+      </div>
+
+      <div className="card" style={{ marginBottom: '16px' }}>
         <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#E8A317' }}>👑 プレミアム機能</h3>
         {isPremium ? (
           <div style={{ backgroundColor: '#FFF9E6', padding: '16px', borderRadius: '12px', textAlign: 'center' }}>

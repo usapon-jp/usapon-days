@@ -580,17 +580,6 @@ export default function ScheduleView({ appData, setAppData }) {
               {formattedDateString}
             </h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--color-text-sub)' }}>重なり:</span>
-            <select 
-              value={appData.overlapBehavior || 'coexist'}
-              onChange={(e) => setAppData(prev => ({ ...prev, overlapBehavior: e.target.value }))}
-              style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '8px', border: '1px solid var(--color-border-dark)', backgroundColor: '#fff', cursor: 'pointer' }}
-            >
-              <option value="coexist">共存</option>
-              <option value="swap">入替</option>
-            </select>
-          </div>
         </div>
 
         <div 
