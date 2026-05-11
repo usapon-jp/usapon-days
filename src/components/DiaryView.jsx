@@ -34,8 +34,12 @@ export default function DiaryView({ appData, setAppData }) {
   };
 
   const handlePhotoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    if (changingPhotoIndex !== null) {
+      // 変更時は1枚のみ
+      const file = files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
         const img = new Image();
@@ -63,18 +67,11 @@ export default function DiaryView({ appData, setAppData }) {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          // 圧縮してJPEG（品質0.7）として保存
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
-          let newPhotos;
-          if (changingPhotoIndex !== null) {
-            newPhotos = [...photos];
-            newPhotos[changingPhotoIndex] = { ...newPhotos[changingPhotoIndex], url: compressedDataUrl };
-            setChangingPhotoIndex(null);
-          } else {
-            newPhotos = [...photos, { url: compressedDataUrl, comment: '' }];
-          }
-
+          const newPhotos = [...photos];
+          newPhotos[changingPhotoIndex] = { ...newPhotos[changingPhotoIndex], url: compressedDataUrl };
+          
           setAppData(prev => ({
             ...prev,
             records: {
@@ -82,11 +79,73 @@ export default function DiaryView({ appData, setAppData }) {
               [dateKey]: { ...todayRecord, photos: newPhotos }
             }
           }));
+          setChangingPhotoIndex(null);
         };
         img.src = reader.result;
       };
       reader.readAsDataURL(file);
+      return;
     }
+
+    // 新規追加時（複数可）
+    const maxAllowed = isPremium ? 10 : 1;
+    const availableSlots = maxAllowed - photos.length;
+    
+    if (availableSlots <= 0) {
+      alert('これ以上写真を追記できません。');
+      return;
+    }
+
+    const filesToProcess = files.slice(0, availableSlots);
+    let processedCount = 0;
+    const newPhotoItems = [];
+
+    filesToProcess.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          newPhotoItems.push({ url: compressedDataUrl, comment: '' });
+          processedCount++;
+
+          if (processedCount === filesToProcess.length) {
+            setAppData(prev => ({
+              ...prev,
+              records: {
+                ...(prev.records || {}),
+                [dateKey]: { ...todayRecord, photos: [...photos, ...newPhotoItems] }
+              }
+            }));
+          }
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleDeletePhoto = (index) => {
@@ -368,6 +427,7 @@ export default function DiaryView({ appData, setAppData }) {
                   onChange={handlePhotoUpload} 
                   accept="image/*" 
                   style={{ display: 'none' }} 
+                  multiple
                 />
               </div>
             )}
