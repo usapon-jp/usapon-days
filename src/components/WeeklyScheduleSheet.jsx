@@ -5,10 +5,10 @@ import { formatWeekDateLabel, getWeeklyMarkers, isSameDate } from '../utils/sche
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
 const CATEGORY_COLORS = {
-  todo: 'rgba(255, 209, 102, 0.42)',
-  routine: 'rgba(127, 191, 151, 0.38)',
-  relax: 'rgba(133, 184, 224, 0.38)',
-  wakuwaku: 'rgba(255, 170, 180, 0.38)'
+  todo: 'rgba(168, 208, 226, 0.42)',
+  routine: 'rgba(238, 216, 177, 0.44)',
+  relax: 'rgba(172, 214, 166, 0.42)',
+  wakuwaku: 'rgba(255, 218, 95, 0.42)'
 };
 
 export default function WeeklyScheduleSheet({ appData, sheetState, onSheetStateChange, onMarkerClick }) {

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Plus, X, Star, Clock } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'todo', label: 'TODO', color: 'var(--color-todo)', textColor: '#D4B01A' },
-  { id: 'routine', label: 'ルーティン', color: 'var(--color-routine)', textColor: '#5B9E77' },
-  { id: 'relax', label: 'のんびり', color: 'var(--color-relax)', textColor: '#6296C2' },
-  { id: 'wakuwaku', label: 'わくわく', color: 'var(--color-wakuwaku)', textColor: '#E57373' },
+  { id: 'todo', label: 'TODO', color: 'var(--color-todo)', textColor: '#5E7F8F' },
+  { id: 'routine', label: 'ルーティン', color: 'var(--color-routine)', textColor: '#7B6658' },
+  { id: 'relax', label: 'のんびり', color: 'var(--color-relax)', textColor: '#5B8A67' },
+  { id: 'wakuwaku', label: 'わくわく', color: 'var(--color-wakuwaku)', textColor: '#A88412' },
 ];
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
@@ -214,10 +214,11 @@ export default function CreateNoteModal({ appData, onClose, onSave, initialCateg
                 style={{ 
                   flex: 1, padding: '12px 0', borderRadius: '12px', border: 'none',
                   color: cat.textColor, fontWeight: 'bold',
-                  opacity: category === cat.id ? 1 : 0.4,
-                  transform: category === cat.id ? 'scale(1.05)' : 'scale(1)',
+                  opacity: category === cat.id ? 1 : 0.58,
+                  transform: category === cat.id ? 'translateY(-2px)' : 'scale(1)',
                   transition: 'all 0.2s', cursor: 'pointer',
-                  boxShadow: category === cat.id ? '0 4px 8px rgba(0,0,0,0.1)' : 'none'
+                  boxShadow: category === cat.id ? '0 7px 14px rgba(0,0,0,0.08)' : 'none',
+                  backgroundColor: cat.color
                 }}
               >
                 {cat.label}

@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Plus, Save } from 'lucide-react';
 
 const CATEGORIES = [
-  { id: 'todo', label: 'TODO', textColor: '#D4B01A' },
-  { id: 'routine', label: 'ルーティン', textColor: '#5B9E77' },
-  { id: 'relax', label: 'のんびり', textColor: '#6296C2' },
-  { id: 'wakuwaku', label: 'わくわく', textColor: '#E57373' }
+  { id: 'todo', label: 'TODO', textColor: '#5E7F8F' },
+  { id: 'routine', label: 'ルーティン', textColor: '#7B6658' },
+  { id: 'relax', label: 'のんびり', textColor: '#5B8A67' },
+  { id: 'wakuwaku', label: 'わくわく', textColor: '#A88412' }
 ];
 
 const createChecklistItem = (text = '', done = false, id = null) => ({
@@ -156,6 +156,33 @@ export default function NoteDetailView({ appData, setAppData, source, onBack }) 
           <input value={title} onChange={(event) => setTitle(event.target.value)} />
         </label>
 
+        <div className="note-checklist-editor">
+          <div className="note-checklist-editor-header">
+            <span>やることリスト</span>
+            <button type="button" onClick={() => addChecklistItem()} aria-label="チェック項目を追加">
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="note-checklist-editor-items">
+            {checklistItems.map((item, index) => (
+              <label className="note-checklist-editor-row" key={item.id}>
+                <input
+                  type="checkbox"
+                  checked={item.done}
+                  onChange={(event) => updateChecklistItem(item.id, { done: event.target.checked })}
+                />
+                <input
+                  type="text"
+                  placeholder={index === 0 ? 'チェックすること' : '次のチェック'}
+                  value={item.text}
+                  onChange={(event) => updateChecklistItem(item.id, { text: event.target.value })}
+                  onKeyDown={(event) => handleChecklistKeyDown(event, item)}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div className="note-detail-category">
           <span>種類</span>
           <div>
@@ -164,7 +191,7 @@ export default function NoteDetailView({ appData, setAppData, source, onBack }) 
                 key={cat.id}
                 type="button"
                 className={`sticky-note ${cat.id} ${category === cat.id ? 'is-selected' : ''}`}
-                style={{ color: cat.textColor }}
+                style={{ color: cat.textColor, backgroundColor: `var(--color-${cat.id})` }}
                 onClick={() => setCategory(cat.id)}
               >
                 {cat.label}
@@ -198,33 +225,6 @@ export default function NoteDetailView({ appData, setAppData, source, onBack }) 
           <textarea rows={4} value={memo} onChange={(event) => setMemo(event.target.value)} />
         </label>
 
-        <div className="note-checklist-editor">
-          <div className="note-checklist-editor-header">
-            <span>チェックリスト</span>
-            <button type="button" onClick={() => addChecklistItem()} aria-label="チェック項目を追加">
-              <Plus size={16} />
-            </button>
-          </div>
-          <div className="note-checklist-editor-items">
-            {checklistItems.map((item, index) => (
-              <label className="note-checklist-editor-row" key={item.id}>
-                <input
-                  type="checkbox"
-                  checked={item.done}
-                  onChange={(event) => updateChecklistItem(item.id, { done: event.target.checked })}
-                />
-                <input
-                  type="text"
-                  placeholder={index === 0 ? 'チェックすること' : '次のチェック'}
-                  value={item.text}
-                  onChange={(event) => updateChecklistItem(item.id, { text: event.target.value })}
-                  onKeyDown={(event) => handleChecklistKeyDown(event, item)}
-                />
-              </label>
-            ))}
-          </div>
-        </div>
-
         <button className="note-detail-save" type="button" onClick={handleSave} disabled={!title.trim()}>
           <Save size={18} />
           <span>保存する</span>
@@ -233,4 +233,3 @@ export default function NoteDetailView({ appData, setAppData, source, onBack }) 
     </div>
   );
 }
-

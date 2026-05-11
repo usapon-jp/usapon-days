@@ -8,7 +8,14 @@ const SNAP_MINUTES = 15;
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export default function ScheduleView({ appData, setAppData }) {
+const CATEGORY_BUDDIES = {
+  todo: { src: `${import.meta.env.BASE_URL}assets/usa.png`, alt: 'グレーのうさぎ' },
+  routine: { src: `${import.meta.env.BASE_URL}assets/pon.png`, alt: '茶色のうさぎ' },
+  relax: { src: `${import.meta.env.BASE_URL}assets/piyo.png`, alt: 'ひよこ' },
+  wakuwaku: { src: `${import.meta.env.BASE_URL}assets/lemon.png`, alt: 'レモン' }
+};
+
+export default function ScheduleView({ appData, setAppData, onOpenNoteDetail }) {
   const START_HOUR = appData.settings?.startHour ?? 6;
   const END_HOUR = appData.settings?.endHour ?? 24;
 
@@ -20,6 +27,7 @@ export default function ScheduleView({ appData, setAppData }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showTray, setShowTray] = useState(false);
   const [activeNoteId, setActiveNoteId] = useState(null);
+  const [expandedChecklistNoteId, setExpandedChecklistNoteId] = useState(null);
 
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [moveTargetDate, setMoveTargetDate] = useState('');
@@ -158,6 +166,24 @@ export default function ScheduleView({ appData, setAppData }) {
         return { ...prev, favorites: [...favs, { title: note.title, category: note.category, durationMin: note.durationMin }] };
       }
     });
+  };
+
+  const toggleChecklistItem = (noteId, itemId, done) => {
+    setAppData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        [dateKey]: (prev.schedule[dateKey] || []).map(note => {
+          if (note.id !== noteId) return note;
+          return {
+            ...note,
+            checklist: (note.checklist || []).map(item => (
+              item.id === itemId ? { ...item, done } : item
+            ))
+          };
+        })
+      }
+    }));
   };
 
   const applyNoteUpdate = (noteId, newStartTime, newDurationMin, targetDateKey) => {
@@ -551,7 +577,7 @@ export default function ScheduleView({ appData, setAppData }) {
       setMoveTargetDate(format(new Date(selectedDate.getTime() + 86400000), 'yyyy-MM-dd'));
       setIsMoveModalOpen(true);
       return; 
-    } else if (action === 'ひとやすみ' || action === 'TODOに戻す') {
+    } else if (action === 'ひとやすみ') {
       setAppData(prev => ({
         ...prev,
         todos: [...prev.todos, { ...note, status: 'paused' }],
@@ -560,6 +586,13 @@ export default function ScheduleView({ appData, setAppData }) {
           [dateKey]: (prev.schedule[dateKey] || []).filter(n => n.id !== note.id)
         }
       }));
+      setActiveNoteId(null);
+    } else if (action === '詳細追加') {
+      onOpenNoteDetail?.({
+        id: note.id,
+        sourceType: 'schedule',
+        sourceDateKey: dateKey
+      }, 'today');
       setActiveNoteId(null);
     } else if (action === 'やめる') {
       if (note.originalRoutineId) {
@@ -697,6 +730,12 @@ export default function ScheduleView({ appData, setAppData }) {
             const isDragging = dragState?.id === note.id && isDragMode;
             const isActive = activeNoteId === note.id;
             const isFavorite = (appData.favorites || []).some(f => f.title === note.title && f.category === note.category);
+            const checklist = Array.isArray(note.checklist) ? note.checklist.filter(item => item.text?.trim()) : [];
+            const hasChecklist = checklist.length > 0;
+            const hasMemo = Boolean(note.memo?.trim());
+            const hasBuddyDetails = hasChecklist || hasMemo;
+            const buddy = CATEGORY_BUDDIES[note.category] || CATEGORY_BUDDIES.todo;
+            const isChecklistOpen = expandedChecklistNoteId === note.id;
             
             return (
               <div 
@@ -704,7 +743,7 @@ export default function ScheduleView({ appData, setAppData }) {
                 className={`sticky-note ${note.category} ${isDragging ? 'dragging-shake' : ''}`}
                 style={{ 
                   position: 'absolute', top: `${top}px`, left: note.left, width: note.width, height: `${height}px`,
-                  zIndex: isDragging || isActive ? 100 : 1,
+                  zIndex: isDragging || isActive || isChecklistOpen ? 100 : 1,
                   opacity: (showTray && !isActive) ? 0.3 : (isDragging ? 0.8 : 1),
                   boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.2)' : '2px 2px 5px var(--color-shadow)',
                   transition: isDragging ? 'none' : 'all 0.2s',
@@ -723,11 +762,11 @@ export default function ScheduleView({ appData, setAppData }) {
               >
                 <div 
                   onClick={(e) => { e.stopPropagation(); toggleFavorite(note); }}
-                  style={{ position: 'absolute', top: '4px', right: '4px', padding: '4px', cursor: 'pointer', zIndex: 10 }}
+                  style={{ position: 'absolute', top: '4px', right: hasBuddyDetails ? 'auto' : '4px', left: hasBuddyDetails ? '4px' : 'auto', padding: '4px', cursor: 'pointer', zIndex: 30 }}
                 >
                   <Star size={16} fill={isFavorite ? '#FFD700' : 'none'} color={isFavorite ? '#FFD700' : 'rgba(0,0,0,0.2)'} strokeWidth={2.5} />
                 </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', padding: '0 8px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', padding: hasBuddyDetails ? '0 42px 0 8px' : '0 8px' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '14px', textAlign: 'center', wordBreak: 'break-word', lineHeight: '1.2' }}>{note.title}</div>
                   <div style={{ fontSize: '11px', color: 'var(--color-text-sub)', marginTop: '4px' }}>
                     {Math.floor(note.startTime / 60)}:{String(note.startTime % 60).padStart(2, '0')}〜
@@ -735,6 +774,55 @@ export default function ScheduleView({ appData, setAppData }) {
                     <span style={{ fontWeight: 'bold', color: 'var(--color-text-main)', marginLeft: '4px' }}>({note.durationMin}分)</span>
                   </div>
                 </div>
+
+                {hasBuddyDetails && (
+                  <>
+                    <button
+                      type="button"
+                      className="schedule-buddy-button"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowTray(false);
+                        setActiveNoteId(null);
+                        setExpandedChecklistNoteId(prev => prev === note.id ? null : note.id);
+                      }}
+                      aria-label={`${note.title}の詳細`}
+                    >
+                      <img src={buddy.src} alt={buddy.alt} />
+                    </button>
+
+                    {isChecklistOpen && (
+                      <div
+                        className={`schedule-checklist-popover schedule-checklist-${note.category || 'todo'}`}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="schedule-checklist-header">
+                          <img src={buddy.src} alt="" aria-hidden="true" />
+                          <span>{note.title}</span>
+                        </div>
+                        {hasMemo && (
+                          <p className="schedule-checklist-memo">{note.memo}</p>
+                        )}
+                        {hasChecklist && (
+                          <div className="schedule-checklist-items">
+                            {checklist.map(item => (
+                              <label key={item.id || item.text}>
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(item.done)}
+                                  onChange={(e) => toggleChecklistItem(note.id, item.id, e.target.checked)}
+                                />
+                                <span>{item.text}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
                 
                 <div  
                   style={{
@@ -864,7 +952,7 @@ export default function ScheduleView({ appData, setAppData }) {
             <TrayButton icon={<CheckCircle2 color="#5B9E77" size={28} strokeWidth={2.5} />} label="できた" action="できた" onClick={() => handleTrayAction('できた')} />
             <TrayButton icon={<MoveRight color="#D4B01A" size={28} strokeWidth={2.5} />} label="移動" action="移動" onClick={() => handleTrayAction('移動')} />
             <TrayButton icon={<Coffee color="#6296C2" size={28} strokeWidth={2.5} />} label="ひとやすみ" action="ひとやすみ" onClick={() => handleTrayAction('ひとやすみ')} />
-            <TrayButton icon={<ListTodo color="#A0A0A0" size={28} strokeWidth={2.5} />} label="TODOに戻す" action="TODOに戻す" onClick={() => handleTrayAction('TODOに戻す')} />
+            <TrayButton icon={<ListTodo color="#A0A0A0" size={28} strokeWidth={2.5} />} label="詳細追加" action="詳細追加" onClick={() => handleTrayAction('詳細追加')} />
             <TrayButton icon={<Trash2 color="#A0A0A0" size={28} strokeWidth={2.5} />} label="やめる" action="やめる" onClick={() => handleTrayAction('やめる')} />
           </div>
         </div>

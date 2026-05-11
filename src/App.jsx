@@ -8,12 +8,13 @@ import SettingsView from './components/SettingsView';
 import TodoListView from './components/TodoListView';
 import WeeklyScheduleSheet from './components/WeeklyScheduleSheet';
 import NoteDetailView from './components/NoteDetailView';
+import WelcomeView from './components/WelcomeView';
 
 import CalendarView from './components/CalendarView';
 
 function App() {
-  const [currentTab, setCurrentTab] = useState('schedule');
   const [appData, setAppData] = useState(loadAppData());
+  const [currentTab, setCurrentTab] = useState(appData.settings?.hasSeenWelcome ? 'schedule' : 'welcome');
   const [weeklySheetState, setWeeklySheetState] = useState('closed');
   const [noteDetailSource, setNoteDetailSource] = useState(null);
   const [noteDetailReturnTab, setNoteDetailReturnTab] = useState('home');
@@ -28,10 +29,16 @@ function App() {
     setWeeklySheetState('closed');
   };
 
+  const handleOpenNoteDetail = (source, returnTab = currentTab) => {
+    setNoteDetailReturnTab(returnTab);
+    setNoteDetailSource(source);
+    setWeeklySheetState('closed');
+  };
+
   const handleBackFromNoteDetail = () => {
     setNoteDetailSource(null);
     setCurrentTab(noteDetailReturnTab);
-    setWeeklySheetState('half');
+    setWeeklySheetState(noteDetailReturnTab === 'today' ? 'closed' : 'half');
   };
 
   const handleNavigate = (tab) => {
@@ -39,7 +46,22 @@ function App() {
     setNoteDetailSource(null);
   };
 
+  const handleStartWelcome = () => {
+    setAppData(prev => ({
+      ...prev,
+      settings: {
+        ...(prev.settings || {}),
+        hasSeenWelcome: true
+      }
+    }));
+    setCurrentTab('home');
+  };
+
   const renderContent = () => {
+    if (currentTab === 'welcome') {
+      return <WelcomeView onStart={handleStartWelcome} />;
+    }
+
     if (noteDetailSource) {
       return (
         <NoteDetailView
@@ -54,11 +76,11 @@ function App() {
     switch (currentTab) {
       case 'home': return <HomeView appData={appData} setAppData={setAppData} onNavigate={handleNavigate} />;
       case 'calendar': return <CalendarView appData={appData} setAppData={setAppData} onNavigate={handleNavigate} />;
-      case 'today': return <ScheduleView appData={appData} setAppData={setAppData} />;
+      case 'today': return <ScheduleView appData={appData} setAppData={setAppData} onOpenNoteDetail={handleOpenNoteDetail} />;
       case 'diary': return <DiaryView appData={appData} setAppData={setAppData} />;
       case 'settings': return <SettingsView appData={appData} setAppData={setAppData} />;
       case 'todo': return <TodoListView appData={appData} setAppData={setAppData} onNavigate={handleNavigate} />;
-      default: return <ScheduleView appData={appData} setAppData={setAppData} />;
+      default: return <ScheduleView appData={appData} setAppData={setAppData} onOpenNoteDetail={handleOpenNoteDetail} />;
     }
   };
 
@@ -68,7 +90,7 @@ function App() {
         {renderContent()}
       </div>
 
-      {!noteDetailSource && (
+      {currentTab !== 'welcome' && !noteDetailSource && (
         <WeeklyScheduleSheet
           appData={appData}
           sheetState={weeklySheetState}
@@ -77,6 +99,7 @@ function App() {
         />
       )}
       
+      {currentTab !== 'welcome' && (
       <nav className="bottom-nav">
         <div className={`nav-item ${currentTab === 'home' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('home')}>
           <Home size={24} strokeWidth={currentTab === 'home' ? 2.5 : 2} />
@@ -101,6 +124,7 @@ function App() {
           <span style={{ fontSize: '10px' }}>設定</span>
         </div>
       </nav>
+      )}
     </div>
   );
 }

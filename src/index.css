@@ -6,10 +6,10 @@
   --color-text-sub: #A0A0A0;
   
   /* Category Colors */
-  --color-todo: #FFF8C9; /* 淡いレモンイエロー/クリーム */
-  --color-routine: #E2F3E8; /* 淡いミント */
-  --color-relax: #E1F0FC; /* 淡い水色 */
-  --color-wakuwaku: #FFE4E6; /* 淡いピンク */
+  --color-todo: #E8F4FA; /* 淡いブルー */
+  --color-routine: #FFF8E8; /* クリーム */
+  --color-relax: #EAF5E8; /* 淡いグリーン */
+  --color-wakuwaku: #FFF5BD; /* 淡いイエロー */
   
   --color-border: #F2F2F2;
   --color-border-dark: #E5E5E5;
@@ -235,6 +235,142 @@ body {
   font-size: 12px;
 }
 
+/* Welcome / login preview */
+.welcome-view {
+  min-height: 100%;
+  padding: 18px 20px;
+  display: flex;
+}
+
+.login-preview {
+  width: 100%;
+  min-height: calc(100vh - 36px);
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto auto auto auto;
+  justify-items: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 56px 26px 34px;
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 248, 201, 0.5), transparent 30%),
+    #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.035);
+  text-align: center;
+}
+
+.login-preview-main {
+  align-self: end;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.login-preview-fusen {
+  width: min(295px, 82vw);
+  height: auto;
+  margin-bottom: 14px;
+  opacity: 0.95;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.06));
+}
+
+.login-preview h1 {
+  color: var(--color-text-main);
+  font-size: 27px;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.login-preview-subtitle {
+  color: var(--color-text-main);
+  font-size: 14px;
+}
+
+.login-preview-copy {
+  margin-top: 44px;
+  color: var(--color-text-main);
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.login-preview-dots {
+  display: flex;
+  gap: 12px;
+  margin-top: 46px;
+}
+
+.login-preview-dots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #DFDFD8;
+}
+
+.login-preview-dots .is-active {
+  background: #B7BDA6;
+}
+
+.login-preview-primary {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 32px;
+  border: none;
+  border-radius: 999px;
+  background: #D7DFC5;
+  color: var(--color-text-main);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: default;
+}
+
+.login-preview-note {
+  margin-top: 18px;
+  color: var(--color-text-sub);
+  font-size: 12px;
+}
+
+.login-confetti {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  opacity: 0.55;
+  transform: rotate(16deg);
+}
+
+.login-confetti-1 {
+  left: 38px;
+  top: 76px;
+  background: #DDECF0;
+  box-shadow: 8px 8px 0 rgba(221, 236, 240, 0.75);
+}
+
+.login-confetti-2 {
+  right: 56px;
+  top: 42px;
+  width: 12px;
+  height: 26px;
+  background: #F6DDA5;
+  border-radius: 999px;
+}
+
+.login-confetti-3 {
+  left: 26px;
+  top: 285px;
+  background: #DDE7D5;
+  transform: rotate(-20deg);
+}
+
+.login-confetti-4 {
+  right: 28px;
+  bottom: 206px;
+  background: #FFEFC2;
+  transform: rotate(-38deg);
+}
+
 /* Sticky Notes */
 .sticky-note {
   border-radius: 4px;
@@ -242,22 +378,24 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   transition: transform 0.1s;
+  background-blend-mode: soft-light;
 }
 
 .sticky-note.todo { 
   background-color: var(--color-todo); 
-  background-image: url('/assets/fusen1.png'); 
+  background-image: url('/assets/fusen3.png'); 
 }
 .sticky-note.routine { 
   background-color: var(--color-routine); 
-  background-image: url('/assets/fusen2.png'); 
+  background-image: url('/assets/fusen4.png'); 
 }
 .sticky-note.relax { 
   background-color: var(--color-relax); 
-  background-image: url('/assets/fusen3.png'); 
+  background-image: url('/assets/fusen2.png'); 
 }
 .sticky-note.wakuwaku { 
   background-color: var(--color-wakuwaku); 
+  background-image: url('/assets/fusen1.png'); 
 }
 
 /* Note cards */
@@ -502,6 +640,101 @@ body {
 .note-detail-fields .note-checklist-editor-row input[type="text"] {
   min-width: 0;
   padding: 10px 11px;
+}
+
+.schedule-buddy-button {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.68);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 28;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.schedule-buddy-button img {
+  max-width: 31px;
+  max-height: 31px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.08));
+  transform: translateY(9%);
+}
+
+.schedule-checklist-popover {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: calc(100% + 8px);
+  z-index: 80;
+  padding: 12px;
+  border: 1px solid rgba(229, 229, 229, 0.95);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.schedule-checklist-todo { background: rgba(232, 244, 250, 0.97); }
+.schedule-checklist-routine { background: rgba(255, 248, 232, 0.98); }
+.schedule-checklist-relax { background: rgba(234, 245, 232, 0.98); }
+.schedule-checklist-wakuwaku { background: rgba(255, 245, 189, 0.97); }
+
+.schedule-checklist-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+  color: var(--color-text-main);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.schedule-checklist-header img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.schedule-checklist-memo {
+  margin: 0 0 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--color-text-main);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.schedule-checklist-items {
+  display: grid;
+  gap: 7px;
+}
+
+.schedule-checklist-items label {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-text-main);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.schedule-checklist-items input {
+  width: 16px;
+  height: 16px;
+  accent-color: #8FA783;
+}
+
+.schedule-checklist-items span {
+  min-width: 0;
+  word-break: break-word;
 }
 
 /* Weekly schedule sheet */
