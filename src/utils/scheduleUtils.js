@@ -33,6 +33,8 @@ export const getTaskScheduleRange = (task = {}) => {
     [task.scheduleStartDate, task.scheduleEndDate],
     [task.startDate, task.dueDate],
     [task.plannedStartAt, task.dueDate],
+    [task._scheduleSource?.sourceDateKey, task.dueDate],
+    [task.createdAt, task.dueDate],
     [task.startTime, task.endTime]
   ];
 

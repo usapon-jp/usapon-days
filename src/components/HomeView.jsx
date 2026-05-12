@@ -15,6 +15,13 @@ const CATEGORY_LABELS = {
   wakuwaku: 'わくわく'
 };
 
+const HOME_CREATE_CATEGORIES = [
+  { id: 'todo', label: 'TODO' },
+  { id: 'routine', label: 'ルーティン' },
+  { id: 'relax', label: 'のんびり' },
+  { id: 'wakuwaku', label: 'わくわく' }
+];
+
 const getStartLabel = (note) => {
   if (typeof note.startTime === 'number') {
     const hours = Math.floor(note.startTime / 60);
@@ -38,17 +45,37 @@ const hasChecklistOrMemo = (note) => {
   return checklist.length > 0 || Boolean(note.memo?.trim());
 };
 
-export default function HomeView({ appData, onNavigate, onOpenNoteDetail }) {
+export default function HomeView({ appData, onNavigate, onOpenNoteDetail, onCreateNote }) {
   const todayKey = format(new Date(), 'yyyy-MM-dd');
   const todayNotes = getTodayNotes(appData, todayKey);
   const schedulePreview = todayNotes.slice(0, 4);
-  const listNotes = todayNotes.filter(hasChecklistOrMemo).slice(0, 6);
+  const todoListNotes = (appData.todos || []).filter(hasChecklistOrMemo).map(note => ({
+    ...note,
+    _homeSource: { sourceType: 'todos', id: note.id }
+  }));
+  const scheduleListNotes = todayNotes.filter(hasChecklistOrMemo).map(note => ({
+    ...note,
+    _homeSource: { sourceType: 'schedule', sourceDateKey: todayKey, id: note.id }
+  }));
+  const listNotes = [...todoListNotes, ...scheduleListNotes].slice(0, 6);
 
   const openScheduleDetail = (note) => {
     onOpenNoteDetail?.({
       sourceType: 'schedule',
       sourceDateKey: todayKey,
       id: note.id,
+      returnLabel: 'ホームへ戻る'
+    }, 'home');
+  };
+
+  const openListNoteDetail = (note) => {
+    const source = note._homeSource || {
+      sourceType: 'schedule',
+      sourceDateKey: todayKey,
+      id: note.id
+    };
+    onOpenNoteDetail?.({
+      ...source,
       returnLabel: 'ホームへ戻る'
     }, 'home');
   };
@@ -68,8 +95,22 @@ export default function HomeView({ appData, onNavigate, onOpenNoteDetail }) {
       <section className="home-greeting" aria-label="今日のあいさつ">
         <img src={`${import.meta.env.BASE_URL}assets/piyo.png`} alt="ピヨ" />
         <div>
-          <p>おはよう！</p>
-          <span>今日もいっしょに<br />すてきな1日をつくろう〜</span>
+          <p>今日はどんな日にする？</p>
+          <button className="home-write-note" type="button" onClick={() => onCreateNote?.('todo')}>
+            付箋を書く
+          </button>
+          <div className="home-create-chips" aria-label="付箋の種類">
+            {HOME_CREATE_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                className={`home-create-chip home-create-chip-${cat.id}`}
+                onClick={() => onCreateNote?.(cat.id)}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -92,7 +133,7 @@ export default function HomeView({ appData, onNavigate, onOpenNoteDetail }) {
                   {note.status === 'completed' && <Check size={12} />}
                 </span>
                 <span className="home-schedule-title">{note.title}</span>
-                <small>{getStartLabel(note)}</small>
+                <small>{note.status === 'completed' ? '完了' : getStartLabel(note)}</small>
               </button>
             ))}
           </div>
@@ -105,12 +146,12 @@ export default function HomeView({ appData, onNavigate, onOpenNoteDetail }) {
         icon={<ClipboardList size={16} />}
         title="やることリスト"
         actionLabel="すべて見る"
-        onAction={() => onNavigate('today')}
+        onAction={() => onNavigate('memo')}
       >
         {listNotes.length > 0 ? (
           <div className="home-note-strip" aria-label="やることリスト付きの付箋">
             {listNotes.map(note => (
-              <ChecklistNoteCard key={note.id} note={note} onClick={() => openScheduleDetail(note)} />
+              <ChecklistNoteCard key={`${note._homeSource?.sourceType || 'schedule'}-${note.id}`} note={note} onClick={() => openListNoteDetail(note)} />
             ))}
           </div>
         ) : (

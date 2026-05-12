@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, CheckCircle2, MoveRight, Coffee, ListTodo, Trash2, Star } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, MoveRight, Coffee, ListTodo, Trash2, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import CreateNoteModal from './CreateNoteModal';
 
@@ -15,7 +15,16 @@ const CATEGORY_BUDDIES = {
   wakuwaku: { src: `${import.meta.env.BASE_URL}assets/lemon.png`, alt: 'レモン' }
 };
 
-export default function ScheduleView({ appData, setAppData, onOpenNoteDetail }) {
+export default function ScheduleView({
+  appData,
+  setAppData,
+  onOpenNoteDetail,
+  createNoteRequest,
+  onCreateNoteRequestConsumed,
+  scheduleDateRequest,
+  onScheduleDateRequestConsumed,
+  onBack
+}) {
   const START_HOUR = appData.settings?.startHour ?? 6;
   const END_HOUR = appData.settings?.endHour ?? 24;
 
@@ -25,6 +34,7 @@ export default function ScheduleView({ appData, setAppData, onOpenNoteDetail }) 
   const dailySchedule = appData.schedule[dateKey] || [];
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [prefilledCategory, setPrefilledCategory] = useState('todo');
   const [showTray, setShowTray] = useState(false);
   const [activeNoteId, setActiveNoteId] = useState(null);
   const [expandedChecklistNoteId, setExpandedChecklistNoteId] = useState(null);
@@ -45,6 +55,22 @@ export default function ScheduleView({ appData, setAppData, onOpenNoteDetail }) 
   const [isDragMode, setIsDragMode] = useState(false); 
   
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!createNoteRequest?.category) return;
+    setPrefilledCategory(createNoteRequest.category);
+    setIsModalOpen(true);
+    onCreateNoteRequestConsumed?.();
+  }, [createNoteRequest?.requestId, createNoteRequest?.category, onCreateNoteRequestConsumed]);
+
+  useEffect(() => {
+    if (!scheduleDateRequest?.dateKey) return;
+    const [year, month, day] = scheduleDateRequest.dateKey.split('-').map(Number);
+    if (year && month && day) {
+      setSelectedDate(new Date(year, month - 1, day));
+    }
+    onScheduleDateRequestConsumed?.();
+  }, [scheduleDateRequest?.requestId, scheduleDateRequest?.dateKey, onScheduleDateRequestConsumed]);
 
   const handleSaveNote = (noteData) => {
     let startTime = 12 * 60; // デフォルトは12:00
@@ -614,7 +640,7 @@ export default function ScheduleView({ appData, setAppData, onOpenNoteDetail }) 
   const formattedDateString = `${selectedDate.getFullYear()}年${selectedDate.getMonth() + 1}月${selectedDate.getDate()}日（${weekdays[selectedDate.getDay()]}）`;
 
   const dateStripList = Array.from({ length: 31 }, (_, i) => {
-    const d = new Date();
+    const d = new Date(selectedDate);
     d.setDate(d.getDate() - 15 + i);
     return d;
   });
@@ -626,6 +652,26 @@ export default function ScheduleView({ appData, setAppData, onOpenNoteDetail }) 
       <div style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ padding: '16px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label="前の画面に戻る"
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  display: 'grid',
+                  placeItems: 'center',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '50%',
+                  background: '#fff',
+                  color: 'var(--color-text-main)',
+                  cursor: 'pointer'
+                }}
+              >
+                <ArrowLeft size={18} />
+              </button>
+            )}
             <h2 style={{ fontSize: '18px', fontWeight: 'bold' }}>
               {formattedDateString}
             </h2>
@@ -923,12 +969,24 @@ export default function ScheduleView({ appData, setAppData, onOpenNoteDetail }) 
         </div>
       )}
 
-      <div className="fab" onClick={() => setIsModalOpen(true)}>
+      <div
+        className="fab"
+        onClick={() => {
+          setPrefilledCategory('todo');
+          setIsModalOpen(true);
+        }}
+      >
         <Plus size={28} strokeWidth={2.5} />
       </div>
 
       {isModalOpen && (
-        <CreateNoteModal appData={appData} onClose={() => setIsModalOpen(false)} onSave={handleSaveNote} />
+        <CreateNoteModal
+          key={prefilledCategory}
+          appData={appData}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveNote}
+          initialCategory={prefilledCategory}
+        />
       )}
 
       {showTray && (
