@@ -57,12 +57,12 @@ body {
 
 /* Bottom Navigation */
 .bottom-nav {
-  height: 68px;
+  height: 66px;
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(5px);
   border-top: 1px solid var(--color-border);
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
   position: fixed;
   bottom: 0;
@@ -78,19 +78,19 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--color-text-sub);
-  font-size: 9px;
+  font-size: 10px;
   cursor: pointer;
   flex: 1;
   height: 100%;
   transition: all 0.2s;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .nav-item span {
   max-width: 100%;
   overflow: hidden;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -99,17 +99,17 @@ body {
 .nav-item-primary div {
   display: grid;
   place-items: center;
-  width: 45px;
-  height: 45px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background-color: var(--color-primary);
   color: #fff;
-  transform: translateY(-10px);
+  transform: translateY(-11px);
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 .nav-item-primary span {
-  margin-top: -12px;
+  margin-top: -13px;
 }
 
 .nav-item.active {
@@ -376,6 +376,14 @@ body {
   gap: 10px;
 }
 
+.memo-checkbox {
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  accent-color: #8EA381;
+  cursor: pointer;
+}
+
 .memo-circle {
   width: 19px;
   height: 19px;
@@ -384,7 +392,7 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.memo-line-row input {
+.memo-text-input {
   width: 100%;
   min-width: 0;
   border: 0;
@@ -405,11 +413,18 @@ body {
   object-fit: contain;
 }
 
-.memo-pencil {
-  margin-top: 14px;
-  margin-left: min(170px, 48vw);
-  font-size: 30px;
-  transform: rotate(-12deg);
+.memo-edit-button {
+  min-height: 42px;
+  margin-top: 18px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #F8F7F3;
+  color: var(--color-text-main);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .memo-swatches {
@@ -436,9 +451,9 @@ body {
 .memo-actions {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) 52px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: 30px;
 }
 
@@ -452,6 +467,7 @@ body {
   gap: 6px;
   color: var(--color-text-main);
   font: inherit;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -469,8 +485,13 @@ body {
   cursor: not-allowed;
 }
 
-.memo-heart {
-  background: #F8F7F3;
+.memo-stickify {
+  background: #FFF2A8;
+}
+
+.memo-stickify:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Garden */
@@ -775,6 +796,71 @@ body {
   color: var(--color-text-sub);
   font-size: 12px;
   text-align: center;
+}
+
+.home-empty-button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.home-action-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(60, 58, 54, 0.22);
+}
+
+.home-action-sheet {
+  width: min(430px, 100%);
+  display: grid;
+  gap: 8px;
+}
+
+.home-action-sheet p {
+  margin: 0 0 2px;
+  padding: 14px 18px;
+  border-radius: 18px 18px 10px 10px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-text-sub);
+  font-size: 12px;
+  text-align: center;
+}
+
+.home-action-sheet button {
+  min-height: 50px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-text-main);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.home-action-sheet button:first-of-type {
+  border-radius: 10px 10px 0 0;
+}
+
+.home-action-sheet button:not(:last-child) {
+  border-bottom: 1px solid rgba(230, 228, 221, 0.8);
+}
+
+.home-action-sheet .is-danger {
+  color: #B96A62;
+}
+
+.home-action-sheet .is-cancel {
+  margin-top: 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #8EA381;
 }
 
 /* Welcome / login preview */

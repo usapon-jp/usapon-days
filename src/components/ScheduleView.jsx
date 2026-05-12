@@ -606,11 +606,32 @@ export default function ScheduleView({
     } else if (action === 'ひとやすみ') {
       setAppData(prev => ({
         ...prev,
-        todos: [...prev.todos, { ...note, status: 'paused' }],
         schedule: {
           ...prev.schedule,
-          [dateKey]: (prev.schedule[dateKey] || []).filter(n => n.id !== note.id)
+          [dateKey]: (prev.schedule[dateKey] || []).map(n =>
+            n.id === note.id ? { ...n, status: 'paused' } : n
+          )
         }
+      }));
+      setActiveNoteId(null);
+    } else if (action === 'やることリストに貼る') {
+      const checklist = Array.isArray(note.checklist) ? note.checklist : [];
+      const fallbackChecklist = checklist.some(item => item.text?.trim())
+        ? checklist
+        : [{ id: `c${generateId()}`, text: note.title, done: false }];
+      setAppData(prev => ({
+        ...prev,
+        todos: [
+          ...(prev.todos || []),
+          {
+            ...note,
+            id: generateId(),
+            status: 'active',
+            checklist: fallbackChecklist,
+            tags: Array.from(new Set([...(note.tags || []), 'やること'])),
+            createdAt: dateKey
+          }
+        ]
       }));
       setActiveNoteId(null);
     } else if (action === '詳細追加') {
@@ -1001,7 +1022,7 @@ export default function ScheduleView({
               backgroundColor: 'var(--color-tray-bg)', 
               padding: '24px 16px 40px', 
               borderTopLeftRadius: '24px', borderTopRightRadius: '24px',
-              display: 'flex', justifyContent: 'space-around',
+              display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '14px 8px',
               maxWidth: '480px', margin: '0 auto', width: '100%',
               boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
             }}
@@ -1010,6 +1031,7 @@ export default function ScheduleView({
             <TrayButton icon={<CheckCircle2 color="#5B9E77" size={28} strokeWidth={2.5} />} label="できた" action="できた" onClick={() => handleTrayAction('できた')} />
             <TrayButton icon={<MoveRight color="#D4B01A" size={28} strokeWidth={2.5} />} label="移動" action="移動" onClick={() => handleTrayAction('移動')} />
             <TrayButton icon={<Coffee color="#6296C2" size={28} strokeWidth={2.5} />} label="ひとやすみ" action="ひとやすみ" onClick={() => handleTrayAction('ひとやすみ')} />
+            <TrayButton icon={<ListTodo color="#8EA381" size={28} strokeWidth={2.5} />} label="リストに貼る" action="やることリストに貼る" onClick={() => handleTrayAction('やることリストに貼る')} />
             <TrayButton icon={<ListTodo color="#A0A0A0" size={28} strokeWidth={2.5} />} label="詳細追加" action="詳細追加" onClick={() => handleTrayAction('詳細追加')} />
             <TrayButton icon={<Trash2 color="#A0A0A0" size={28} strokeWidth={2.5} />} label="やめる" action="やめる" onClick={() => handleTrayAction('やめる')} />
           </div>

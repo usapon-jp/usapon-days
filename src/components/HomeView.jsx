@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { Bell, Check, ChevronRight, ClipboardList, Menu, Sprout } from 'lucide-react';
 
@@ -40,24 +41,19 @@ const getTodayNotes = (appData, todayKey) => {
   return [...notes].sort((a, b) => (a.startTime ?? 9999) - (b.startTime ?? 9999));
 };
 
-const hasChecklistOrMemo = (note) => {
-  const checklist = Array.isArray(note.checklist) ? note.checklist.filter(item => item.text?.trim()) : [];
-  return checklist.length > 0 || Boolean(note.memo?.trim());
-};
-
-export default function HomeView({ appData, onNavigate, onOpenNoteDetail, onCreateNote }) {
+export default function HomeView({ appData, setAppData, onNavigate, onOpenNoteDetail, onCreateNote }) {
+  const [actionTarget, setActionTarget] = useState(null);
+  const [isReorderMode, setIsReorderMode] = useState(false);
   const todayKey = format(new Date(), 'yyyy-MM-dd');
   const todayNotes = getTodayNotes(appData, todayKey);
   const schedulePreview = todayNotes.slice(0, 4);
-  const todoListNotes = (appData.todos || []).filter(hasChecklistOrMemo).map(note => ({
+  const listNotes = (appData.todos || [])
+    .filter(note => note.status !== 'archived')
+    .filter(note => Array.isArray(note.checklist) && note.checklist.some(item => item.text?.trim()))
+    .map(note => ({
     ...note,
     _homeSource: { sourceType: 'todos', id: note.id }
-  }));
-  const scheduleListNotes = todayNotes.filter(hasChecklistOrMemo).map(note => ({
-    ...note,
-    _homeSource: { sourceType: 'schedule', sourceDateKey: todayKey, id: note.id }
-  }));
-  const listNotes = [...todoListNotes, ...scheduleListNotes].slice(0, 6);
+  })).slice(0, 6);
 
   const openScheduleDetail = (note) => {
     onOpenNoteDetail?.({
@@ -78,6 +74,42 @@ export default function HomeView({ appData, onNavigate, onOpenNoteDetail, onCrea
       ...source,
       returnLabel: 'ホームへ戻る'
     }, 'home');
+  };
+
+  const closeActionSheet = () => {
+    setActionTarget(null);
+    setIsReorderMode(false);
+  };
+
+  const archiveTodo = (note) => {
+    setAppData(prev => ({
+      ...prev,
+      todos: (prev.todos || []).map(todo => (
+        todo.id === note.id ? { ...todo, status: 'archived' } : todo
+      ))
+    }));
+    closeActionSheet();
+  };
+
+  const deleteTodo = (note) => {
+    const confirmed = window.confirm('このやることリストを削除しますか？');
+    if (!confirmed) return;
+    setAppData(prev => ({
+      ...prev,
+      todos: (prev.todos || []).filter(todo => todo.id !== note.id)
+    }));
+    closeActionSheet();
+  };
+
+  const moveTodo = (note, direction) => {
+    setAppData(prev => {
+      const todos = [...(prev.todos || [])];
+      const index = todos.findIndex(todo => todo.id === note.id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= todos.length) return prev;
+      [todos[index], todos[nextIndex]] = [todos[nextIndex], todos[index]];
+      return { ...prev, todos };
+    });
   };
 
   return (
@@ -151,11 +183,21 @@ export default function HomeView({ appData, onNavigate, onOpenNoteDetail, onCrea
         {listNotes.length > 0 ? (
           <div className="home-note-strip" aria-label="やることリスト付きの付箋">
             {listNotes.map(note => (
-              <ChecklistNoteCard key={`${note._homeSource?.sourceType || 'schedule'}-${note.id}`} note={note} onClick={() => openListNoteDetail(note)} />
+              <ChecklistNoteCard
+                key={`${note._homeSource?.sourceType || 'todos'}-${note.id}`}
+                note={note}
+                onClick={() => openListNoteDetail(note)}
+                onLongPress={() => {
+                  setActionTarget(note);
+                  setIsReorderMode(false);
+                }}
+              />
             ))}
           </div>
         ) : (
-          <p className="home-empty">やることリスト付きの付箋はまだありません</p>
+          <button className="home-empty home-empty-button" type="button" onClick={() => onNavigate('memo')}>
+            やることリスト付きの付箋はまだありません
+          </button>
         )}
       </HomeSection>
 
@@ -170,6 +212,29 @@ export default function HomeView({ appData, onNavigate, onOpenNoteDetail, onCrea
           <span>coming soon</span>
         </button>
       </HomeSection>
+
+      {actionTarget && (
+        <div className="home-action-sheet-backdrop" onClick={closeActionSheet}>
+          <div className="home-action-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <p>{actionTarget.title || 'やることリスト'}</p>
+            {isReorderMode ? (
+              <>
+                <button type="button" onClick={() => moveTodo(actionTarget, -1)}>前へ移動</button>
+                <button type="button" onClick={() => moveTodo(actionTarget, 1)}>後ろへ移動</button>
+                <button type="button" onClick={() => setIsReorderMode(false)}>戻る</button>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={() => { openListNoteDetail(actionTarget); closeActionSheet(); }}>編集</button>
+                <button type="button" onClick={() => setIsReorderMode(true)}>並び替え</button>
+                <button type="button" onClick={() => archiveTodo(actionTarget)}>アーカイブ</button>
+                <button type="button" className="is-danger" onClick={() => deleteTodo(actionTarget)}>削除</button>
+              </>
+            )}
+            <button type="button" className="is-cancel" onClick={closeActionSheet}>キャンセル</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -192,14 +257,51 @@ function HomeSection({ icon, title, actionLabel, onAction, children }) {
   );
 }
 
-function ChecklistNoteCard({ note, onClick }) {
+function ChecklistNoteCard({ note, onClick, onLongPress }) {
+  const longPressTimer = useRef(null);
+  const didLongPress = useRef(false);
   const checklist = Array.isArray(note.checklist) ? note.checklist.filter(item => item.text?.trim()) : [];
   const buddy = CATEGORY_BUDDIES[note.category] || CATEGORY_BUDDIES.todo;
   const categoryLabel = CATEGORY_LABELS[note.category] || CATEGORY_LABELS.todo;
   const previewItems = checklist.slice(0, 3);
 
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const startLongPress = () => {
+    didLongPress.current = false;
+    clearLongPress();
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      onLongPress?.();
+    }, 520);
+  };
+
   return (
-    <button type="button" className={`home-check-note sticky-note ${note.category || 'todo'}`} onClick={onClick}>
+    <button
+      type="button"
+      className={`home-check-note sticky-note ${note.category || 'todo'}`}
+      onPointerDown={startLongPress}
+      onPointerUp={clearLongPress}
+      onPointerLeave={clearLongPress}
+      onPointerCancel={clearLongPress}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onLongPress?.();
+      }}
+      onClick={(event) => {
+        if (didLongPress.current) {
+          event.preventDefault();
+          didLongPress.current = false;
+          return;
+        }
+        onClick?.();
+      }}
+    >
       <span className="home-check-note-label">{categoryLabel}</span>
       <strong>{note.title}</strong>
       <span className="home-check-note-lines">

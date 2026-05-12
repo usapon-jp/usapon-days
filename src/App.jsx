@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Calendar, BookHeart, Settings, ListTodo, Sprout } from 'lucide-react';
+import { Home, Calendar, BookHeart, Settings } from 'lucide-react';
 import { loadAppData, saveAppData } from './storageService';
 import HomeView from './components/HomeView';
 import ScheduleView from './components/ScheduleView';
@@ -10,7 +10,6 @@ import WeeklyScheduleSheet from './components/WeeklyScheduleSheet';
 import NoteDetailView from './components/NoteDetailView';
 import WelcomeView from './components/WelcomeView';
 import MemoView from './components/MemoView';
-import GardenView from './components/GardenView';
 
 import CalendarView from './components/CalendarView';
 
@@ -122,7 +121,6 @@ function App() {
         />
       );
       case 'diary': return <DiaryView appData={appData} setAppData={setAppData} />;
-      case 'garden': return <GardenView appData={appData} setAppData={setAppData} />;
       case 'settings': return <SettingsView appData={appData} setAppData={setAppData} />;
       case 'todo': return <TodoListView appData={appData} setAppData={setAppData} onNavigate={handleNavigate} />;
       default: return <ScheduleView appData={appData} setAppData={setAppData} onOpenNoteDetail={handleOpenNoteDetail} />;
@@ -135,7 +133,7 @@ function App() {
         {renderContent()}
       </div>
 
-      {currentTab !== 'welcome' && !noteDetailSource && (
+      {currentTab !== 'welcome' && currentTab !== 'memo' && !noteDetailSource && (
         <WeeklyScheduleSheet
           appData={appData}
           sheetState={weeklySheetState}
@@ -147,33 +145,25 @@ function App() {
       {currentTab !== 'welcome' && (
       <nav className="bottom-nav">
         <div className={`nav-item ${currentTab === 'home' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('home')}>
-          <Home size={21} strokeWidth={currentTab === 'home' ? 2.5 : 2} />
+          <Home size={24} strokeWidth={currentTab === 'home' ? 2.5 : 2} />
           <span>ホーム</span>
         </div>
         <div className={`nav-item ${currentTab === 'calendar' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('calendar')}>
-          <Calendar size={21} strokeWidth={currentTab === 'calendar' ? 2.5 : 2} />
+          <Calendar size={24} strokeWidth={currentTab === 'calendar' ? 2.5 : 2} />
           <span>カレンダー</span>
-        </div>
-        <div className={`nav-item ${currentTab === 'memo' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('memo')}>
-          <ListTodo size={21} strokeWidth={currentTab === 'memo' ? 2.5 : 2} />
-          <span>メモ</span>
         </div>
         <div className={`nav-item nav-item-primary ${currentTab === 'today' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('today')}>
           <div>
-            <Calendar size={26} strokeWidth={2.5} color="#fff" />
+            <Calendar size={28} strokeWidth={2.5} color="#fff" />
           </div>
           <span>今日の予定</span>
         </div>
         <div className={`nav-item ${currentTab === 'diary' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('diary')}>
-          <BookHeart size={21} strokeWidth={currentTab === 'diary' ? 2.5 : 2} />
+          <BookHeart size={24} strokeWidth={currentTab === 'diary' ? 2.5 : 2} />
           <span>記録</span>
         </div>
-        <div className={`nav-item ${currentTab === 'garden' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('garden')}>
-          <Sprout size={21} strokeWidth={currentTab === 'garden' ? 2.5 : 2} />
-          <span>お庭</span>
-        </div>
         <div className={`nav-item ${currentTab === 'settings' && !noteDetailSource ? 'active' : ''}`} onClick={() => handleNavigate('settings')}>
-          <Settings size={21} strokeWidth={currentTab === 'settings' ? 2.5 : 2} />
+          <Settings size={24} strokeWidth={currentTab === 'settings' ? 2.5 : 2} />
           <span>設定</span>
         </div>
       </nav>

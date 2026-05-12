@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Check, Heart, MoreHorizontal, Pencil, Plus } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ArrowLeft, Check, MoreHorizontal, Plus } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'relax', color: '#EAF5E8', label: 'のんびり' },
@@ -17,10 +17,10 @@ const CATEGORY_BUDDIES = {
 
 const generateId = () => Math.random().toString(36).slice(2, 11);
 
-const createChecklistItem = (text = '') => ({
+const createChecklistItem = (text = '', done = false) => ({
   id: `c${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
   text,
-  done: false
+  done
 });
 
 const todayKey = () => {
@@ -29,6 +29,7 @@ const todayKey = () => {
 };
 
 export default function MemoView({ setAppData, onNavigate }) {
+  const inputRefs = useRef({});
   const [category, setCategory] = useState('relax');
   const [items, setItems] = useState([
     createChecklistItem('買い物'),
@@ -42,20 +43,37 @@ export default function MemoView({ setAppData, onNavigate }) {
     setItems(current => current.map(item => item.id === id ? { ...item, text } : item));
   };
 
+  const toggleItem = (id) => {
+    setItems(current => current.map(item => item.id === id ? { ...item, done: !item.done } : item));
+  };
+
+  const focusItem = (id) => {
+    window.setTimeout(() => inputRefs.current[id]?.focus(), 0);
+  };
+
   const addItem = (afterId = null) => {
+    const nextItem = createChecklistItem('');
     setItems(current => {
-      const nextItem = createChecklistItem('');
       if (!afterId) return [...current, nextItem];
       const index = current.findIndex(item => item.id === afterId);
       if (index === -1) return [...current, nextItem];
       return [...current.slice(0, index + 1), nextItem, ...current.slice(index + 1)];
     });
+    focusItem(nextItem.id);
   };
 
-  const handleKeyDown = (event, item) => {
+  const handleKeyDown = (event, item, index) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       addItem(item.id);
+      return;
+    }
+
+    if (event.key === 'Backspace' && item.text === '' && items.length > 1) {
+      event.preventDefault();
+      const focusTarget = items[index - 1]?.id || items[index + 1]?.id;
+      setItems(current => current.filter(currentItem => currentItem.id !== item.id));
+      if (focusTarget) focusItem(focusTarget);
     }
   };
 
@@ -67,7 +85,7 @@ export default function MemoView({ setAppData, onNavigate }) {
       category,
       durationMin: 30,
       memo: '',
-      checklist: cleanItems.map(item => ({ id: item.id, text: item.text, done: false })),
+      checklist: cleanItems.map(item => ({ id: item.id, text: item.text, done: item.done })),
       tags: ['やること'],
       dueDate: null,
       plannedStartAt: null,
@@ -82,6 +100,39 @@ export default function MemoView({ setAppData, onNavigate }) {
       todos: [...(prev.todos || []), newNote]
     }));
     onNavigate('home');
+  };
+
+  const handleStickify = () => {
+    const checkedItems = cleanItems.filter(item => item.done);
+    if (checkedItems.length === 0) return;
+    const dateKey = todayKey();
+    const newScheduleNotes = checkedItems.map((item, index) => ({
+      id: generateId(),
+      title: item.text,
+      category,
+      durationMin: 30,
+      memo: '',
+      checklist: [],
+      tags: ['やること'],
+      dueDate: null,
+      plannedStartAt: null,
+      alarmAt: null,
+      status: 'active',
+      startTime: 12 * 60 + index * 30,
+      createdAt: dateKey
+    }));
+
+    setAppData(prev => ({
+      ...prev,
+      schedule: {
+        ...(prev.schedule || {}),
+        [dateKey]: [
+          ...((prev.schedule || {})[dateKey] || []),
+          ...newScheduleNotes
+        ]
+      }
+    }));
+    onNavigate('today');
   };
 
   return (
@@ -103,14 +154,24 @@ export default function MemoView({ setAppData, onNavigate }) {
       <section className={`memo-sticky-preview sticky-note ${category}`}>
         <span className="memo-tape" aria-hidden="true" />
         <div className="memo-lines">
-          {items.slice(0, 5).map((item, index) => (
+          {items.slice(0, 7).map((item, index) => (
             <label key={item.id} className="memo-line-row">
-              <span className="memo-circle" aria-hidden="true" />
               <input
+                className="memo-checkbox"
+                type="checkbox"
+                checked={item.done}
+                onChange={() => toggleItem(item.id)}
+                aria-label={`${index + 1}行目をチェック`}
+              />
+              <input
+                ref={(element) => {
+                  if (element) inputRefs.current[item.id] = element;
+                }}
+                className="memo-text-input"
                 value={item.text}
                 placeholder={index === 0 ? '買い物' : 'やること'}
                 onChange={(event) => updateItem(item.id, event.target.value)}
-                onKeyDown={(event) => handleKeyDown(event, item)}
+                onKeyDown={(event) => handleKeyDown(event, item, index)}
               />
             </label>
           ))}
@@ -118,7 +179,9 @@ export default function MemoView({ setAppData, onNavigate }) {
         <img src={buddy.src} alt={buddy.alt} />
       </section>
 
-      <div className="memo-pencil" aria-hidden="true">✏️</div>
+      <button className="memo-edit-button" type="button" onClick={() => focusItem(items[0]?.id)}>
+        編集する
+      </button>
 
       <div className="memo-swatches" aria-label="付箋カラー">
         {CATEGORIES.map(cat => (
@@ -142,8 +205,8 @@ export default function MemoView({ setAppData, onNavigate }) {
           <Check size={16} />
           ホームに追加
         </button>
-        <button type="button" className="memo-heart" aria-label="お気に入り">
-          <Heart size={20} />
+        <button type="button" className="memo-stickify" onClick={handleStickify} disabled={!cleanItems.some(item => item.done)}>
+          付箋化する
         </button>
       </div>
     </div>
