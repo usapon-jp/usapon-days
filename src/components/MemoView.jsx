@@ -32,9 +32,7 @@ export default function MemoView({ setAppData, onNavigate }) {
   const inputRefs = useRef({});
   const [category, setCategory] = useState('relax');
   const [items, setItems] = useState([
-    createChecklistItem('買い物'),
-    createChecklistItem('ハガキ返送'),
-    createChecklistItem('郵便局')
+    createChecklistItem('')
   ]);
   const buddy = CATEGORY_BUDDIES[category] || CATEGORY_BUDDIES.relax;
   const cleanItems = items.map(item => ({ ...item, text: item.text.trim() })).filter(item => item.text);
